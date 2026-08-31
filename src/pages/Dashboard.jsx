@@ -1,5 +1,5 @@
 /**
- * Dashboard — the signed-in workspace, served at the `/dashboard` route.
+ * Dashboard — the signed-in workspace home, served at the `/dashboard` route.
  *
  * Ported from the Replit prototype (TypeScript + Tailwind + shadcn). Three
  * things changed in the move, all for consistency with this project:
@@ -7,9 +7,12 @@
  *   - wouter/react-query/Toaster dropped. The prototype wrapped the page in
  *     them but never used them: routing is handled by router.js, and the
  *     toast below is local state.
- *   - Tailwind utility classes replaced by the hand-written `dash-*` classes
- *     in dashboard.css, since this project vendors only the subset of
- *     Tailwind the landing page needed.
+ *   - Tailwind utility classes replaced by hand-written `dash-*` classes.
+ *
+ * The shell (sidebar, mobile top bar and drawer, search header, name/logout
+ * dialog) comes from components/WorkspaceChrome.jsx, shared with the My
+ * Documents page. This file holds only what is unique to the dashboard:
+ * quick actions, the completion donut, recent uploads, and the footer cards.
  *
  * Everything here is front-end only. Documents live in component state, so
  * edits and uploads vanish on reload — swap `startingDocuments` and the
@@ -19,66 +22,37 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import './dashboard.css';
 import {
   ArrowUpRight,
-  Bell,
   BookOpen,
-  ChevronDown,
   ChevronRight,
-  CircleHelp,
   Cloud,
   CloudOff,
-  FilePenLine,
   FileText,
-  Files,
   FolderPlus,
-  Grid2X2,
-  History,
-  House,
   Lightbulb,
   ListFilter,
   LockKeyhole,
-  LogOut,
-  Menu,
-  Moon,
   MoreHorizontal,
-  PanelLeftClose,
-  PanelLeftOpen,
   Pencil,
   Plus,
   Search,
-  Settings,
-  ShieldCheck,
-  Sparkles,
-  Sun,
   Upload,
-  UsersRound,
-  X,
 } from 'lucide-react';
+import {
+  MobileDrawer,
+  MobileTopbar,
+  Sidebar,
+  WorkspaceHeader,
+  WorkspaceModal,
+} from '../components/WorkspaceChrome';
+import { workspaceRoutes } from '../components/workspace-nav';
 import { navigate } from '../router';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
-const navPrimary = [
-  { label: 'Dashboard', icon: House },
-  { label: 'My documents', icon: Files },
-  { label: 'Editor', icon: FilePenLine },
-  { label: 'Version history', icon: History, badge: '3' },
-  { label: 'Subscription', icon: Sparkles },
-  { label: 'Features', icon: Grid2X2 },
-];
-
-// "Privacy mode" is handled specially below: it toggles a switch rather than
-// navigating anywhere.
-const navWorkspace = [
-  { label: 'Privacy mode', icon: ShieldCheck },
-  { label: 'Settings', icon: Settings },
-  { label: 'Help and guide', icon: CircleHelp },
-  { label: 'Storage', icon: Cloud },
-  { label: 'Shared documents', icon: UsersRound },
-];
-
-// Seed data. `color` picks a file-chip tint (see .dash-glyph-* in the CSS).
+// Seed data. `color` picks a file-chip tint (see .dash-glyph-* in the
+// workspace chrome stylesheet).
 const startingDocuments = [
   { id: 1, title: 'Thesis_Chapter_3', type: 'DOCX', edited: 'Today, 9:42 AM', pages: 20, status: 'In progress', color: 'saffron' },
   { id: 2, title: 'FYP_phase_01', type: 'PDF', edited: 'Yesterday, 4:18 PM', pages: 30, status: 'Done', color: 'sage' },
@@ -97,157 +71,6 @@ const statusClass = {
 /* ==========================================================================
    Pieces
    ========================================================================== */
-
-// Brand lockup. `compact` drops the wordmark for the collapsed sidebar.
-function LogoMark({ compact = false }) {
-  return (
-    <div className="dash-logo">
-      <span className="dash-logo-mark"><FileText size={19} strokeWidth={2.2} /></span>
-      {!compact && (
-        <span>
-          <span className="dash-logo-word">Docu<em>Mend</em></span>
-          <span className="dash-logo-tag">write with clarity</span>
-        </span>
-      )}
-    </div>
-  );
-}
-
-/**
- * One sidebar row. Renders either a badge or a caller-supplied `trailing`
- * element (the privacy switch) on the right — never both.
- */
-function NavButton({ item, active, onClick, trailing, collapsed = false }) {
-  const Icon = item.icon;
-  const badge = item.badge ? <span className="dash-nav-badge">{item.badge}</span> : null;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      // When collapsed the label is gone, so it has to survive as a tooltip
-      // and an accessible name.
-      aria-label={collapsed ? item.label : undefined}
-      title={collapsed ? item.label : undefined}
-      className={`dash-nav-item ${active ? 'is-active' : ''}`}
-    >
-      <span><Icon size={15} strokeWidth={active ? 2.4 : 1.8} />{!collapsed && item.label}</span>
-      {!collapsed && (trailing ?? badge)}
-    </button>
-  );
-}
-
-function Sidebar({
-  activeNav,
-  onNavigate,
-  privacyMode,
-  onPrivacyToggle,
-  darkMode,
-  onThemeToggle,
-  onLogout,
-  collapsed,
-  onToggleCollapse,
-}) {
-  return (
-    <aside className={`dash-sidebar ${collapsed ? 'is-collapsed' : ''}`}>
-      <div className="dash-sidebar-head">
-        <LogoMark compact={collapsed} />
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="dash-collapse-btn"
-        >
-          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        </button>
-      </div>
-
-      <nav className="dash-nav" aria-label="Primary navigation">
-        {!collapsed && <p className="dash-nav-label">Your workspace</p>}
-        {navPrimary.map((item) => (
-          <NavButton
-            key={item.label}
-            item={item}
-            active={activeNav === item.label}
-            onClick={() => onNavigate(item.label)}
-            collapsed={collapsed}
-          />
-        ))}
-      </nav>
-
-      <nav className="dash-nav dash-nav-secondary" aria-label="Workspace settings">
-        {navWorkspace.map((item) => {
-          const isPrivacy = item.label === 'Privacy mode';
-          return (
-            <NavButton
-              key={item.label}
-              item={item}
-              active={activeNav === item.label}
-              onClick={() => (isPrivacy ? onPrivacyToggle() : onNavigate(item.label))}
-              collapsed={collapsed}
-              trailing={isPrivacy ? (
-                <span
-                  className={`dash-switch ${privacyMode ? 'is-on' : ''}`}
-                  role="img"
-                  aria-label={privacyMode ? 'Privacy mode on' : 'Privacy mode off'}
-                />
-              ) : undefined}
-            />
-          );
-        })}
-      </nav>
-
-      <div className="dash-sidebar-foot">
-        <button
-          type="button"
-          onClick={onThemeToggle}
-          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={collapsed ? (darkMode ? 'Light mode' : 'Dark mode') : undefined}
-          className="dash-theme-btn"
-        >
-          <span>{darkMode ? <Moon size={15} /> : <Sun size={15} />}{!collapsed && (darkMode ? 'Dark mode' : 'Light mode')}</span>
-          {!collapsed && <span className={`dash-switch ${darkMode ? 'is-on' : ''}`} />}
-        </button>
-        <button type="button" onClick={onLogout} className="dash-logout" title={collapsed ? 'Log out' : undefined}>
-          <LogOut size={14} /> {!collapsed && 'Log out'}
-        </button>
-        {!collapsed && <p className="dash-sidebar-note">Private by default. Your words stay yours.</p>}
-      </div>
-    </aside>
-  );
-}
-
-// Shown in place of the sidebar below 768px.
-function MobileTopbar({ onMenu, onThemeToggle, darkMode }) {
-  return (
-    <div className="dash-topbar">
-      <button type="button" onClick={onMenu} aria-label="Open menu"><Menu size={20} /></button>
-      <LogoMark />
-      <button type="button" onClick={onThemeToggle} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
-        {darkMode ? <Moon size={18} /> : <Sun size={18} />}
-      </button>
-    </div>
-  );
-}
-
-function SearchBar({ value, onChange }) {
-  return (
-    <label className="dash-search">
-      <span className="dash-sr">Search documents</span>
-      <Search size={16} />
-      <input
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="Search your workspace"
-      />
-      {value && (
-        <button type="button" onClick={() => onChange('')} className="dash-search-clear" aria-label="Clear search">
-          <X size={14} />
-        </button>
-      )}
-    </label>
-  );
-}
 
 /**
  * One of the four coloured tiles. `onDrop` is only passed to the upload tile,
@@ -345,80 +168,6 @@ function DocumentRow({ doc, selected, onSelect, onOpen }) {
   );
 }
 
-/**
- * One dialog serving three jobs, chosen by `mode`: naming a document, naming
- * a folder, or confirming logout. Returns null when closed.
- */
-function Modal({ mode, initialValue, onClose, onSubmit, onLogout }) {
-  // Seeded once per mount. The caller gives this component a `key` derived
-  // from the mode and the draft name, so reopening it for a different
-  // document remounts it and re-seeds the field -- no syncing effect needed.
-  const [value, setValue] = useState(initialValue);
-
-  if (!mode) return null;
-
-  const isLogout = mode === 'logout';
-  const isFolder = mode === 'folder';
-  const title = isLogout
-    ? 'Take a quiet exit?'
-    : isFolder
-      ? 'Create a new folder'
-      : initialValue ? 'Rename document' : 'Start a new document';
-
-  const submit = (event) => {
-    event.preventDefault();
-    if (isLogout) onLogout();
-    else if (value.trim()) onSubmit(value.trim());
-  };
-
-  return (
-    // Closes on backdrop click only -- the guard stops a drag that ends
-    // outside the panel from dismissing it.
-    <div
-      className="dash-modal-backdrop"
-      onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}
-    >
-      <div className="dash-modal" role="dialog" aria-modal="true" aria-labelledby="dash-modal-title">
-        <div className="dash-modal-head">
-          <div>
-            <p className="dash-modal-kicker">{isLogout ? 'Session' : 'Workspace'}</p>
-            <h2 id="dash-modal-title" className="dash-modal-title dash-serif">{title}</h2>
-          </div>
-          <button type="button" onClick={onClose} className="dash-modal-close" aria-label="Close dialog"><X size={17} /></button>
-        </div>
-
-        {isLogout ? (
-          <form onSubmit={submit}>
-            <p className="dash-modal-text">Your drafts are safely tucked away. You can return whenever the next sentence finds you.</p>
-            <div className="dash-modal-actions">
-              <button type="button" onClick={onClose} className="dash-btn-quiet">Stay here</button>
-              <button type="submit" className="dash-btn-dark">Log out</button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={submit}>
-            <label className="dash-modal-label" htmlFor="dash-modal-input">{isFolder ? 'Folder name' : 'Document name'}</label>
-            <input
-              id="dash-modal-input"
-              autoFocus
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              placeholder={isFolder ? 'e.g. Research & references' : 'e.g. The shape of an idea'}
-              className="dash-modal-input"
-            />
-            <div className="dash-modal-actions">
-              <button type="button" onClick={onClose} className="dash-btn-quiet">Cancel</button>
-              <button type="submit" className="dash-btn-primary">
-                {initialValue ? 'Save changes' : isFolder ? 'Create folder' : 'Create document'}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ==========================================================================
    The page
    ========================================================================== */
@@ -457,9 +206,13 @@ function Dashboard() {
 
   const announce = (message) => setToast(message);
 
-  // Sidebar navigation is cosmetic for now: it highlights the row and says so.
-  // Point these at real routes as the pages are built.
+  // Labels with a real page route there; the rest highlight and say so.
   const selectNav = (label) => {
+    const route = workspaceRoutes[label];
+    if (route && label !== 'Dashboard') {
+      navigate(route);
+      return;
+    }
     setActiveNav(label);
     if (label !== 'Dashboard') announce(`${label} view selected`);
     setMobileSidebar(false);
@@ -550,53 +303,17 @@ function Dashboard() {
         onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
       />
 
-      {/* Mobile drawer. The inner stopPropagation keeps clicks inside the
-          panel from reaching the backdrop's close handler. */}
-      {mobileSidebar && (
-        <div className="dash-drawer" onMouseDown={() => setMobileSidebar(false)}>
-          <div className="dash-drawer-panel" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="dash-drawer-head">
-              <LogoMark />
-              <button type="button" onClick={() => setMobileSidebar(false)} aria-label="Close menu"><X size={18} /></button>
-            </div>
-            <nav className="dash-nav" aria-label="Mobile navigation">
-              {[...navPrimary, ...navWorkspace].map((item) => (
-                <NavButton
-                  key={item.label}
-                  item={item}
-                  active={activeNav === item.label}
-                  onClick={() => (item.label === 'Privacy mode'
-                    ? setPrivacyMode((current) => !current)
-                    : selectNav(item.label))}
-                />
-              ))}
-            </nav>
-            <button type="button" onClick={() => setModal('logout')} className="dash-logout">
-              <LogOut size={14} /> Log out
-            </button>
-          </div>
-        </div>
-      )}
+      <MobileDrawer
+        open={mobileSidebar}
+        onClose={() => setMobileSidebar(false)}
+        activeNav={activeNav}
+        onNavigate={selectNav}
+        onPrivacyToggle={() => setPrivacyMode((current) => !current)}
+        onLogout={() => setModal('logout')}
+      />
 
       <main className={`dash-main ${sidebarCollapsed ? 'is-wide' : ''}`}>
-        <header className="dash-header dash-soft">
-          <div className="dash-saved"><span className="dash-dot" /> All changes saved</div>
-          <SearchBar value={search} onChange={setSearch} />
-          <div className="dash-header-actions">
-            <button type="button" onClick={() => announce('You are all caught up')} className="dash-icon-btn" aria-label="Notifications">
-              <Bell size={17} strokeWidth={1.8} /><span className="dash-pip" />
-            </button>
-            <span className="dash-divider" />
-            <button type="button" onClick={() => announce('Profile menu is ready')} className="dash-profile">
-              <span className="dash-avatar">MH</span>
-              <span className="dash-profile-text">
-                <span className="dash-profile-name">Mahnoor</span>
-                <span className="dash-profile-role">Personal workspace</span>
-              </span>
-              <ChevronDown size={14} />
-            </button>
-          </div>
-        </header>
+        <WorkspaceHeader search={search} onSearchChange={setSearch} onAnnounce={announce} />
 
         <div className="dash-body">
           {/* Greeting */}
@@ -727,7 +444,7 @@ function Dashboard() {
         </div>
       </main>
 
-      <Modal
+      <WorkspaceModal
         key={`${modal}-${draftValue}`}
         mode={modal}
         initialValue={draftValue}
