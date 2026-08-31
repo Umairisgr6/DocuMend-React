@@ -5,6 +5,8 @@ import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
 import NotFound from './pages/NotFound';
 import SignUp from './pages/SignUp';
+import Editor from './pages/editor';
+import Pricing from './pages/pricing';   // Agar Pricing component hai
 import { usePathname } from './router';
 
 function Router() {
@@ -13,8 +15,9 @@ function Router() {
   if (pathname === '/signup') return <SignUp />;
   if (pathname === '/login') return <LogIn />;
   if (pathname === '/dashboard') return <Dashboard />;
+  if (pathname === '/editor') return <Editor />;
   if (pathname === '/documents') return <MyDocuments />;
-  return <NotFound />;
+  if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;  return <NotFound />;
 }
 
 function App() {
@@ -26,3 +29,5 @@ function App() {
 }
 
 export default App;
+
+
