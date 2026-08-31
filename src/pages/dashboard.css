@@ -11,7 +11,6 @@
    file-type chips, the plum quick action -- keep the mockup's values, since
    the main site has no equivalent to align them to.
    ========================================================================== */
-
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap");
 
 /* ==========================================================================
@@ -29,8 +28,9 @@
   --dash-forest: #172d26;
   --dash-forest-deep: #10251f;
   --dash-sage: #7caa91;
-  --dash-coral: #c86f52;
-  --dash-plum: #57495a;
+  --dash-coral:#0b394b;
+  --dash-plum:#757465
+;
 
   /* surfaces */
   --dash-bg: #f3eee3;
@@ -60,7 +60,7 @@
   --dash-done-bg: #d7ebdc;
   --dash-done-ink: #31704d;
   --dash-progress-bg: #f5e4bd;
-  --dash-progress-ink: #966518;
+  --dash-progress-ink: #9b9388;
   --dash-backlog-bg: #e4dae9;
   --dash-backlog-ink: #735b82;
 
@@ -568,9 +568,9 @@
 .dash-quick-green { background: #214d40; color: #f7f0df; }
 .dash-quick-green:hover { background: #285b4b; }
 .dash-quick-plum { background: var(--dash-plum); color: #f8f0df; }
-.dash-quick-plum:hover { background: #66556a; }
+.dash-quick-plum:hover { background: #343335; }
 .dash-quick-coral { background: var(--dash-coral); color: #fff2de; }
-.dash-quick-coral:hover { background: #d67c5d; }
+.dash-quick-coral:hover { background: #014e60; }
 
 .dash-quick-icon {
   display: flex;
