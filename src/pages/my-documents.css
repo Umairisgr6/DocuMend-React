@@ -1,0 +1,318 @@
+/* ==========================================================================
+   My Documents page styles (/documents)
+
+   Loaded by MyDocuments.jsx. Only what is unique to the library page lives
+   here: the tab strip, heading row, library search, filter chips, stat
+   tiles, and the document card grid. The shared shell -- sidebar, header,
+   modal, palette variables, card primitives -- comes from
+   components/workspace-chrome.css.
+
+   Every rule leans on the `--dash-*` variables declared on `.dash-shell`;
+   the handful of tints with no dark equivalent are re-declared under
+   `.dash-dark` at the end.
+   ========================================================================== */
+
+/* ==========================================================================
+   Tab strip
+   ========================================================================== */
+.docs-tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--dash-line);
+}
+.docs-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.docs-tab {
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  padding: 11px 24px;
+  background: var(--dash-card);
+  color: var(--dash-ink-soft);
+  font: 500 12px inherit;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.docs-tab:hover { background: var(--dash-raised); color: var(--dash-ink); }
+.docs-tab.is-active {
+  background: var(--dash-forest);
+  border-color: var(--dash-forest);
+  color: #f3eee3;
+  font-weight: 600;
+}
+
+/* Round profile bubble at the strip's right edge. */
+.docs-tabs-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dash-gold);
+  color: var(--dash-forest);
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(216, 165, 60, .25);
+  transition: background-color .2s ease, transform .2s ease;
+}
+.docs-tabs-avatar:hover { background: var(--dash-gold-soft); transform: translateY(-2px); }
+
+/* ==========================================================================
+   Heading row
+   ========================================================================== */
+.docs-title-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.docs-kicker { margin: 0 0 8px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .22em; color: var(--dash-gold-strong); }
+.docs-title { margin: 0; font-size: 32px; line-height: 1.02; letter-spacing: -.04em; color: var(--dash-ink); }
+
+.docs-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: var(--dash-gold);
+  color: var(--dash-forest);
+  font: 600 12px inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(216, 165, 60, .3);
+  transition: background-color .2s ease, transform .2s ease;
+}
+.docs-new-btn:hover { background: var(--dash-gold-soft); transform: translateY(-2px); }
+
+/* ==========================================================================
+   Library search
+   ========================================================================== */
+.docs-search { position: relative; display: block; margin-bottom: 18px; }
+.docs-search > svg:first-of-type {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #789185;
+  pointer-events: none;
+}
+.docs-search input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 52px;
+  padding: 0 18px 0 48px;
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: var(--dash-card);
+  color: var(--dash-ink);
+  font: 500 13px inherit;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.docs-search input::placeholder { color: #9da99d; }
+.docs-search input:focus { border-color: var(--dash-gold); box-shadow: 0 0 0 3px rgba(216, 165, 60, .15); }
+
+/* ==========================================================================
+   Category chips
+   ========================================================================== */
+.docs-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+.docs-chip {
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: var(--dash-card);
+  color: var(--dash-ink-soft);
+  font: 600 11px inherit;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.docs-chip:hover { background: var(--dash-raised); color: var(--dash-ink); }
+.docs-chip.is-active {
+  background: var(--dash-forest);
+  border-color: var(--dash-forest);
+  color: #f3eee3;
+}
+
+/* ==========================================================================
+   Stat tiles
+   ========================================================================== */
+.docs-stats { display: grid; gap: 12px; margin-bottom: 24px; grid-template-columns: repeat(2, 1fr); }
+
+.docs-stat {
+  border: 1px solid var(--dash-line);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.docs-stat-icon { color: inherit; }
+.docs-stat-value { font-size: 24px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--dash-ink); }
+.docs-stat-label { font-size: 10px; color: var(--dash-ink-soft); }
+
+/* Tile tints. The design gives each stat its own pastel; only the cream one
+   maps to an existing surface, so the rest are declared here (with dark
+   overrides at the bottom of the file). */
+.docs-stat-cream { background: var(--dash-card); color: var(--dash-gold-strong); }
+.docs-stat-lavender { background: #e6def0; border-color: #d5c9e2; color: #705580; }
+.docs-stat-peach { background: #f6ddd2; border-color: #ecc9ba; color: #ae5e46; }
+.docs-stat-sky { background: #dcebf0; border-color: #c8dde5; color: #527887; }
+
+/* ==========================================================================
+   Document cards
+   ========================================================================== */
+.docs-grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+
+/* The whole card is one button so the entire surface is clickable and
+   keyboard-focusable, like the dashboard's rows. */
+.docs-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 18px;
+  background: var(--dash-card);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Tinted preview banner standing in for a page thumbnail. */
+.docs-preview {
+  position: relative;
+  display: block;
+  min-height: 148px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.docs-preview-lines {
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 40%;
+}
+.docs-preview-lines span { display: block; height: 4px; border-radius: 999px; background: currentColor; opacity: .28; }
+.docs-preview-lines span:nth-child(2) { width: 80%; }
+.docs-preview-lines span:nth-child(3) { width: 60%; }
+
+/* White tile holding the file icon, centred in the banner. */
+.docs-preview-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 253, 246, .82);
+  box-shadow: 0 8px 18px rgba(23, 45, 38, .12);
+}
+.docs-preview-type {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  opacity: .65;
+}
+
+/* Preview tints share the file-chip palette from the workspace chrome, so a
+   document keeps one colour identity everywhere it appears. */
+.docs-preview-saffron  { background: #f1ddb4; color: #9b691d; }
+.docs-preview-sage     { background: #cfe2d2; color: #397152; }
+.docs-preview-coral    { background: #f2d1c3; color: #ae5e46; }
+.docs-preview-lavender { background: #ded4e6; color: #705580; }
+.docs-preview-sky      { background: #d0e2e8; color: #527887; }
+.docs-preview-gold     { background: #f0d7a2; color: #a97118; }
+
+.docs-card-body { display: flex; flex-direction: column; padding: 14px 8px 8px; }
+.docs-card-title { font-size: 19px; letter-spacing: -.02em; color: var(--dash-ink); }
+.docs-card-meta { margin-top: 6px; font-size: 10px; color: var(--dash-ink-muted); }
+
+/* Tag chips under the meta line. */
+.docs-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.docs-tag {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* Tones: issue = something to fix, warn = needs attention, good = healthy,
+   info = neutral fact. good/warn reuse the status palette so "Done" and
+   "In progress" look the same here as on the dashboard. */
+.docs-tag-issue { background: #f3d0c4; color: #a44c31; }
+.docs-tag-warn { background: var(--dash-progress-bg); color: var(--dash-progress-ink); }
+.docs-tag-good { background: var(--dash-done-bg); color: var(--dash-done-ink); }
+.docs-tag-info { background: #d6e5eb; color: #48707f; }
+
+/* Empty state when search + filters match nothing. */
+.docs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 20px;
+  border: 1px dashed var(--dash-line);
+  border-radius: 18px;
+  text-align: center;
+  color: var(--dash-ink-soft);
+}
+.docs-empty p { margin: 12px 0 0; font-size: 12px; font-weight: 600; color: var(--dash-ink); }
+.docs-empty button {
+  margin-top: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--dash-gold-strong);
+  font: 600 10px inherit;
+  cursor: pointer;
+}
+.docs-empty button:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   Dark theme overrides for the hand-picked tints above
+   ========================================================================== */
+.dash-dark .docs-stat-lavender { background: #47394f; border-color: #5a4a63; color: #cdbbda; }
+.dash-dark .docs-stat-peach { background: #55352a; border-color: #6b4436; color: #f0b8a3; }
+.dash-dark .docs-stat-sky { background: #27424c; border-color: #35545f; color: #a9cbd8; }
+.dash-dark .docs-tag-issue { background: #5a2f22; color: #f0b8a3; }
+.dash-dark .docs-tag-info { background: #2c4650; color: #a9cbd8; }
+.dash-dark .docs-preview-icon { background: rgba(20, 36, 30, .8); }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (min-width: 640px) {
+  .docs-title-row { flex-direction: row; align-items: flex-end; }
+  .docs-title { font-size: 38px; }
+  .docs-new-btn { align-self: auto; }
+}
+
+@media (min-width: 768px) {
+  .docs-grid { grid-template-columns: repeat(2, 1fr); }
+  .docs-stats { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 1280px) {
+  .docs-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Respect a reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  .docs-new-btn:hover,
+  .docs-tabs-avatar:hover { transform: none; }
+}
