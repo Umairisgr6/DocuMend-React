@@ -1,4 +1,27 @@
+/*
+================================================================================
+  PAGE OVERVIEW: Pricing.jsx (DocuMend Pricing & Plans Page)
+================================================================================
+  Purpose:
+  - Displays the pricing tiers, subscription toggle, and privacy guarantees
+    for DocuMend.
+
+  Key Features:
+  1. Billing Toggle:
+     - Switches between Monthly and Annual billing frequencies (with a 29% discount calculation).
+  2. Plan Tiers (Starter, Pro, Enterprise):
+     - Highlights features, prices, and recommended options.
+  3. Interactive Illustrations & Visual Accents:
+     - Vector illustrations showing document repair concepts.
+  4. Privacy & Trust Signals:
+     - User testimonials, local-first editing guarantees, and security certifications.
+  5. Interactive Toast Notifications:
+     - Provides instant user feedback on button clicks and trial selections.
+================================================================================
+*/
+
 import { useState } from "react";
+// Lucide React icons used throughout the pricing page
 import {
   ArrowLeft,
   ArrowRight,
@@ -13,8 +36,13 @@ import {
   UsersRound,
   Zap,
 } from "lucide-react";
+// External stylesheet for custom layout, fonts, and animation effects
 import "./pricing.css";
 
+/* -------------------------------------------------------------------------- */
+/*                            PRICING PLANS DATA                              */
+/* -------------------------------------------------------------------------- */
+// Array containing configuration details for each subscription tier
 const plans = [
   {
     id: "starter",
@@ -44,7 +72,7 @@ const plans = [
     cta: "Choose Pro",
     icon: Sparkles,
     tone: "featured",
-    recommended: true,
+    recommended: true, // Shows badge for the most popular option
     features: [
       "Unlimited active documents",
       "Full version history",
@@ -59,7 +87,7 @@ const plans = [
     name: "Enterprise",
     eyebrow: "For careful teams",
     description: "A private document room for legal, academic, and research teams with standards.",
-    price: { monthly: null, annual: null },
+    price: { monthly: null, annual: null }, // Custom price (Contact Us)
     suffix: "tailored to you",
     cta: "Talk to our team",
     icon: ShieldCheck,
@@ -75,6 +103,10 @@ const plans = [
   },
 ];
 
+/* -------------------------------------------------------------------------- */
+/*                         SUB-COMPONENT: BRAND MARK                          */
+/* -------------------------------------------------------------------------- */
+// Renders the icon container for the DocuMend brand mark
 function BrandMark() {
   return (
     <span className="pricing-brand-mark" aria-hidden="true">
@@ -83,6 +115,10 @@ function BrandMark() {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*                    SUB-COMPONENT: REPAIR ILLUSTRATION                      */
+/* -------------------------------------------------------------------------- */
+// Animated vector graphic illustrating document repair and citation verification
 function RepairIllustration() {
   return (
     <svg
@@ -91,10 +127,12 @@ function RepairIllustration() {
       role="img"
       aria-label="A document being gently repaired"
     >
+      {/* Background connector wave line */}
       <path
         className="pricing-illustration-line"
         d="M12 151c44-28 57-97 113-108 57-12 79 48 134 49 58 1 72-49 144-30"
       />
+      {/* Left document card representation */}
       <g transform="translate(62 28) rotate(-6 80 65)">
         <rect className="pricing-paper" width="164" height="123" rx="11" />
         <path className="pricing-paper-fold" d="M131 0h22a11 11 0 0 1 11 11v20z" />
@@ -104,6 +142,7 @@ function RepairIllustration() {
         <rect x="19" y="79" width="122" height="6" rx="3" fill="#c0d2c6" />
         <rect x="19" y="99" width="61" height="8" rx="4" fill="#de6a50" opacity=".85" />
       </g>
+      {/* Right checkmark / verified card representation */}
       <g transform="translate(287 28) rotate(8)">
         <rect width="122" height="92" rx="10" fill="#f0bd5c" />
         <rect x="16" y="18" width="63" height="7" rx="3.5" fill="#fff6de" />
@@ -112,6 +151,7 @@ function RepairIllustration() {
         <circle cx="96" cy="73" r="11" fill="#21483e" />
         <path d="m90 73 4 5 9-10" fill="none" stroke="#f0bd5c" strokeWidth="2.6" />
       </g>
+      {/* Pencil and sparkle accents */}
       <path className="pricing-pencil" d="m211 130 29-48 13 8-29 48-18 7z" />
       <path className="pricing-pencil-tip" d="m211 130 13 8-18 7z" />
       <circle className="pricing-sparkle sparkle-one" cx="392" cy="20" r="4" />
@@ -121,6 +161,10 @@ function RepairIllustration() {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*                         SUB-COMPONENT: PLAN ICON                           */
+/* -------------------------------------------------------------------------- */
+// Dynamic wrapper for plan tier icons
 function PlanIcon({ icon: Icon }) {
   return (
     <span className="pricing-plan-icon" aria-hidden="true">
@@ -129,19 +173,31 @@ function PlanIcon({ icon: Icon }) {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*                         SUB-COMPONENT: PLAN CARD                           */
+/* -------------------------------------------------------------------------- */
+// Renders an individual subscription card
 function PlanCard({ plan, isAnnual, onChoose }) {
   const Icon = plan.icon;
+  // Calculate pricing according to selected billing frequency
   const displayPrice = isAnnual ? plan.price.annual : plan.price.monthly;
-  const savings = plan.price.monthly && isAnnual ? Math.round((1 - plan.price.annual / plan.price.monthly) * 100) : 0;
+  // Calculate percentage savings for annual billing
+  const savings =
+    plan.price.monthly && isAnnual
+      ? Math.round((1 - plan.price.annual / plan.price.monthly) * 100)
+      : 0;
 
   return (
     <article className={`pricing-plan pricing-plan-${plan.tone}`}>
+      {/* Recommended badge for preferred tier */}
       {plan.recommended && (
         <div className="pricing-recommended">
           <Sparkles size={13} />
           Most loved by researchers
         </div>
       )}
+
+      {/* Card Header & Price Information */}
       <div className="pricing-plan-top">
         <div className="pricing-plan-heading">
           <PlanIcon icon={Icon} />
@@ -151,6 +207,8 @@ function PlanCard({ plan, isAnnual, onChoose }) {
           </div>
         </div>
         <p className="pricing-plan-description">{plan.description}</p>
+        
+        {/* Dynamic Price Display */}
         <div className="pricing-price-row">
           {displayPrice === null ? (
             <span className="pricing-custom-price">Let&apos;s talk</span>
@@ -162,13 +220,18 @@ function PlanCard({ plan, isAnnual, onChoose }) {
           )}
           <span className="pricing-price-suffix">{plan.suffix}</span>
         </div>
+
+        {/* Savings Tag */}
         {savings > 0 && (
           <span className="pricing-savings">
             Save {savings}% with annual billing
           </span>
         )}
       </div>
+
       <div className="pricing-plan-divider" />
+
+      {/* Included Features List */}
       <div className="pricing-feature-heading">
         <span>Includes</span>
         <Icon size={14} />
@@ -181,6 +244,8 @@ function PlanCard({ plan, isAnnual, onChoose }) {
           </li>
         ))}
       </ul>
+
+      {/* Call to Action Button */}
       <button className="pricing-plan-button" type="button" onClick={() => onChoose(plan)}>
         {plan.cta}
         <ArrowRight size={16} />
@@ -189,15 +254,23 @@ function PlanCard({ plan, isAnnual, onChoose }) {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           MAIN PRICING COMPONENT                           */
+/* -------------------------------------------------------------------------- */
 export default function Pricing() {
+  // Billing cycle state: true for annual (discounted), false for monthly
   const [isAnnual, setIsAnnual] = useState(true);
+  
+  // Temporary toast notification message state
   const [toast, setToast] = useState("");
 
+  // Helper function to show self-dismissing toast notifications
   const notify = (message) => {
     setToast(message);
     window.setTimeout(() => setToast(""), 2800);
   };
 
+  // Handles click events on plan CTA buttons
   const handleChoose = (plan) => {
     if (plan.id === "starter") {
       notify("Starter is ready when you are. Your first document is waiting.");
@@ -212,8 +285,13 @@ export default function Pricing() {
 
   return (
     <main className="pricing-shell">
+      {/* Decorative background glow orbs */}
       <div className="pricing-orb pricing-orb-one" aria-hidden="true" />
       <div className="pricing-orb pricing-orb-two" aria-hidden="true" />
+
+      {/* ========================================================= */}
+      {/* 1. TOP HEADER NAVIGATION                                  */}
+      {/* ========================================================= */}
       <header className="pricing-header">
         <button
           className="pricing-back"
@@ -233,6 +311,9 @@ export default function Pricing() {
         </span>
       </header>
 
+      {/* ========================================================= */}
+      {/* 2. HERO / INTRODUCTION SECTION                            */}
+      {/* ========================================================= */}
       <section className="pricing-intro" aria-labelledby="pricing-title">
         <div className="pricing-kicker">
           <span className="pricing-kicker-rule" />
@@ -249,6 +330,9 @@ export default function Pricing() {
         <RepairIllustration />
       </section>
 
+      {/* ========================================================= */}
+      {/* 3. BILLING FREQUENCY TOGGLE (Monthly / Annual)            */}
+      {/* ========================================================= */}
       <section className="pricing-controls" aria-label="Billing frequency">
         <div className="pricing-billing-copy">
           <span className="pricing-billing-label">Choose your pace</span>
@@ -275,12 +359,18 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/* ========================================================= */}
+      {/* 4. PRICING CARDS GRID                                     */}
+      {/* ========================================================= */}
       <section className="pricing-plans" aria-label="DocuMend plans">
         {plans.map((plan) => (
           <PlanCard key={plan.id} plan={plan} isAnnual={isAnnual} onChoose={handleChoose} />
         ))}
       </section>
 
+      {/* ========================================================= */}
+      {/* 5. BASELINE STANDARD FEATURES (Included in all tiers)      */}
+      {/* ========================================================= */}
       <section className="pricing-every-plan" aria-label="Included with every plan">
         <div className="pricing-every-plan-title">
           <span className="pricing-mini-mark"><Zap size={14} /></span>
@@ -296,7 +386,11 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/* ========================================================= */}
+      {/* 6. TRUST, TESTIMONIAL & PRIVACY PROMISE GRID              */}
+      {/* ========================================================= */}
       <section className="pricing-lower-grid" aria-label="Why writers choose DocuMend">
+        {/* Testimonial Card */}
         <article className="pricing-reassurance">
           <span className="pricing-reassurance-label">A note from the careful corner</span>
           <div className="pricing-quote-mark"><Quote size={19} /></div>
@@ -318,6 +412,7 @@ export default function Pricing() {
           </div>
         </article>
 
+        {/* Local-First Privacy Guarantee Card */}
         <aside className="pricing-promise-card" aria-label="DocuMend privacy promise">
           <div className="pricing-promise-orbit pricing-promise-orbit-one" aria-hidden="true" />
           <div className="pricing-promise-orbit pricing-promise-orbit-two" aria-hidden="true" />
@@ -340,6 +435,9 @@ export default function Pricing() {
         </aside>
       </section>
 
+      {/* ========================================================= */}
+      {/* 7. PAGE FOOTER                                            */}
+      {/* ========================================================= */}
       <footer className="pricing-footer">
         <span><span className="pricing-footer-dot" /> DocuMend · A more considered way to write.</span>
         <button type="button" onClick={() => notify("The full comparison is coming into focus.")}>
@@ -347,6 +445,9 @@ export default function Pricing() {
         </button>
       </footer>
 
+      {/* ========================================================= */}
+      {/* 8. DYNAMIC TOAST POPUP NOTIFICATION                       */}
+      {/* ========================================================= */}
       {toast && (
         <div className="pricing-toast" role="status" aria-live="polite">
           <span className="pricing-toast-icon"><Check size={14} /></span>
