@@ -1,0 +1,619 @@
+/* ==========================================================================
+   Sign-up page styles (/signup)
+
+   Loaded by SignUp.jsx, not by main.jsx -- so these rules only reach the
+   browser when the sign-up page is rendered. Every selector is prefixed
+   `signup-` so nothing here can collide with the landing page or with the
+   utility classes in styles-utilities.css.
+   ========================================================================== */
+
+/* Fraunces is the display face for the headings; DM Sans carries the body
+   text and every control. Loaded here rather than in index.css so the extra
+   weights are only fetched on the pages that use them. */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+
+/* ==========================================================================
+   Page shell -- centers the card on a warm paper background
+   ========================================================================== */
+
+/* The palette lives on `.signup-shell` rather than `:root` so it stays scoped
+   to this page and can't leak into the landing page's own token set. */
+.signup-shell {
+  --signup-ink: #203b36;
+  --signup-forest: #182E28;
+  --signup-mint: #dbeee6;
+  --signup-paper: #fffdf8;
+  --signup-orange: #e8992e;
+  --signup-coral: #de6a50;
+  min-height: 100dvh;
+  padding: clamp(18px, 4vw, 52px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5efe6;
+  color: var(--signup-ink);
+  font-family: "DM Sans", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Faint dot grid over the background. The mask fades it out towards the
+   bottom-right so it never competes with the card. */
+.signup-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  pointer-events: none;
+  background-image: radial-gradient(#b59e84 0.7px, transparent 0.7px);
+  background-size: 17px 17px;
+  mask-image: linear-gradient(120deg, black, transparent 72%);
+}
+
+/* The card itself: story panel on the left, form on the right. `overflow:
+   hidden` keeps the panel's decorative circle clipped to the rounded corners. */
+.signup-card {
+  width: min(1120px, 100%);
+  min-height: min(700px, calc(100dvh - 48px));
+  display: grid;
+  grid-template-columns: minmax(370px, 0.93fr) minmax(420px, 1.07fr);
+  background: var(--signup-paper);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 28px 70px rgba(61, 53, 39, 0.16),
+    0 5px 14px rgba(61, 53, 39, 0.08);
+  animation: signup-in 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ==========================================================================
+   Left panel -- brand, headline, illustration
+   ========================================================================== */
+.signup-story {
+  padding: clamp(34px, 5vw, 68px);
+  background: var(--signup-forest);
+  color: #f8f4e9;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Concentric rings bleeding off the bottom-right corner. The rings are
+   `box-shadow` spreads rather than extra elements, so it stays one node. */
+.signup-story::after {
+  content: "";
+  width: 280px;
+  height: 280px;
+  position: absolute;
+  right: -120px;
+  bottom: -116px;
+  border: 1px solid rgba(232, 153, 46, 0.35);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 22px rgba(232, 153, 46, 0.08),
+    0 0 0 44px rgba(232, 153, 46, 0.05);
+}
+
+/* z-index 2 lifts the text above the decorative ring and the artwork. */
+.signup-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  position: relative;
+  z-index: 2;
+}
+
+/* Tilted logo tile. The asymmetric radius (sharp bottom-left) is what gives
+   it the dog-eared-page look. */
+.signup-brand-mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  background: var(--signup-orange);
+  color: var(--signup-forest);
+  border-radius: 9px 9px 9px 3px;
+  transform: rotate(-5deg);
+}
+
+.signup-brand-accent {
+  color: #efb159;
+}
+
+.signup-story-copy {
+  position: relative;
+  z-index: 2;
+  margin-top: 42px;
+}
+
+/* Small all-caps label above the headline. */
+.signup-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #efb159;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.signup-story h1 {
+  font-family: Fraunces, serif;
+  font-size: clamp(43px, 5vw, 70px);
+  line-height: 0.98;
+  letter-spacing: -0.065em;
+  max-width: 430px;
+  margin: 18px 0 20px;
+  font-weight: 600;
+}
+
+/* The <em> in the headline is used for color, not for italics. */
+.signup-story h1 em {
+  color: #efb159;
+  font-style: normal;
+}
+
+.signup-story-copy p {
+  max-width: 340px;
+  color: #c9dbd2;
+  line-height: 1.65;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* The inline SVG from <DocumentArtwork />, gently bobbing. */
+.signup-art {
+  width: min(100%, 390px);
+  margin: 26px auto 0;
+  position: relative;
+  z-index: 1;
+  animation: signup-float 5s ease-in-out infinite;
+}
+
+/* Styles the paper sheet inside that SVG. */
+.art-paper {
+  fill: #f9f6ed;
+  stroke: #d4e6d8;
+  stroke-width: 2;
+}
+
+/* ==========================================================================
+   Right panel -- the form
+   ========================================================================== */
+.signup-form-side {
+  padding: clamp(28px, 6vw, 78px) clamp(28px, 7vw, 88px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--signup-paper);
+}
+
+/* `font: 600 12px inherit` keeps the button on DM Sans -- browsers reset
+   form controls to their own font otherwise. Same trick on the inputs below. */
+.signup-back {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #789087;
+  font: 600 12px inherit;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  margin-bottom: 34px;
+}
+
+/* Nudges left on hover, hinting at the direction it takes you. */
+.signup-back:hover {
+  color: var(--signup-forest);
+  transform: translateX(-3px);
+}
+
+.signup-form-heading h2 {
+  font-family: Fraunces, serif;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  font-size: clamp(32px, 4vw, 47px);
+  line-height: 1;
+  margin: 0 0 10px;
+}
+
+.signup-form-heading p {
+  color: #71837c;
+  font-size: 14px;
+  margin: 0 0 27px;
+}
+
+/* ==========================================================================
+   Fields
+   ========================================================================== */
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* First / last name share a row until the 390px breakpoint stacks them. */
+.signup-name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.signup-label {
+  color: #49635b;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 0 0 6px 3px;
+  display: block;
+}
+
+/* Positioning context for the password visibility toggle. */
+.signup-input-wrap {
+  position: relative;
+}
+
+/* `box-sizing: border-box` keeps the padding inside the declared width, so
+   the inputs line up with the grid columns exactly. */
+.signup-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 48px;
+  border: 1px solid #d8e2dc;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 14px;
+  color: var(--signup-ink);
+  outline: none;
+  font: 500 13px inherit;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.signup-input::placeholder {
+  color: #a7b5af;
+  font-weight: 400;
+}
+
+/* The default outline is removed above, so this focus ring replaces it --
+   keep one or the other for keyboard users. */
+.signup-input:focus {
+  border-color: var(--signup-orange);
+  background: #fffefb;
+  box-shadow: 0 0 0 4px rgba(232, 153, 46, 0.15);
+}
+
+/* Applied by SignUp.jsx whenever that field has a validation error. */
+.signup-input-invalid {
+  border-color: var(--signup-coral);
+}
+
+/* Reserves room so typed text never runs under the eye button. */
+.signup-password-input {
+  padding-right: 45px;
+}
+
+.signup-eye {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border: 0;
+  background: transparent;
+  color: #7d9289;
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 7px;
+}
+
+.signup-eye:hover {
+  background: #edf4ef;
+  color: var(--signup-forest);
+}
+
+/* ==========================================================================
+   Feedback -- errors, hints, success
+   ========================================================================== */
+.signup-error {
+  color: var(--signup-coral);
+  font-size: 10px;
+  margin: 5px 3px 0;
+}
+
+/* Sits in the same slot as .signup-error (one replaces the other), which is
+   why both share the same margins. */
+.signup-password-hint {
+  color: #9aa9a2;
+  font-size: 10px;
+  margin: 5px 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.signup-success {
+  border-radius: 12px;
+  background: #e3f2e8;
+  color: #296048;
+  padding: 13px;
+  font-size: 12px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  animation: signup-pop 0.35s ease both;
+}
+
+/* `flex: none` stops the circle being squashed by long success text. */
+.signup-success-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #79b58b;
+  color: white;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+/* ==========================================================================
+   Submit button
+   ========================================================================== */
+
+/* The offset shadow with no blur is a solid "ledge" under the button. The
+   hover/active rules below grow and shrink it to fake a physical press. */
+.signup-submit {
+  height: 49px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--signup-orange);
+  color: #fffaf0;
+  font: 700 13px inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+  box-shadow: 0 6px 0 #c8781a;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.signup-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #c8781a;
+  background: #f0a43b;
+}
+
+/* Drops into the ledge on click -- the shadow shrinks by the same amount the
+   button moves down, so the bottom edge stays put. */
+.signup-submit:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #c8781a;
+}
+
+/* ==========================================================================
+   Social sign-up and footer links
+   ========================================================================== */
+
+/* "or continue with" flanked by two rules, drawn with the pseudo-elements. */
+.signup-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a1afa9;
+  font-size: 11px;
+  margin: 23px 0 13px;
+}
+
+.signup-divider::before,
+.signup-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #e5ebe7;
+}
+
+.signup-socials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.signup-social {
+  height: 43px;
+  border: 1px solid #dce5e0;
+  background: #fff;
+  color: #536b63;
+  border-radius: 11px;
+  font: 600 11px inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.signup-social:hover {
+  transform: translateY(-2px);
+  border-color: #b7cfc0;
+  background: #f4faf5;
+}
+
+/* The brand logos are inline SVGs, which the global reset renders as blocks
+   at their natural size -- this pins them to the button's scale. */
+.signup-social svg {
+  width: 15px;
+  height: 15px;
+}
+
+.signup-login {
+  text-align: center;
+  color: #84938d;
+  font-size: 12px;
+  margin: 26px 0 0;
+}
+
+/* A real <button> styled as a link, so it stays keyboard-operable. */
+.signup-login button {
+  border: 0;
+  background: transparent;
+  color: var(--signup-forest);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 0 2px;
+  border-bottom: 1px solid #9bb8a6;
+}
+
+.signup-login button:hover {
+  color: var(--signup-orange);
+  border-color: var(--signup-orange);
+}
+
+/* `min-height` holds the space open while the message is empty, so the
+   layout doesn't jump when text appears. */
+.signup-social-note {
+  min-height: 16px;
+  color: #6b8878;
+  text-align: center;
+  font-size: 11px;
+  margin: 10px 0 0;
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+/* Card entrance: rises and settles as the page mounts. */
+@keyframes signup-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Slow bob for the illustration. */
+@keyframes signup-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1deg);
+  }
+}
+
+/* Success banner appearing. */
+@keyframes signup-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* Tablet and phone: the card goes full-bleed and the two columns become
+   stacked rows, with the artwork tucked into the corner of the story panel. */
+@media (max-width: 760px) {
+  .signup-shell {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .signup-card {
+    min-height: 100dvh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .signup-story {
+    min-height: 330px;
+    padding: 28px 26px 18px;
+  }
+
+  .signup-story-copy {
+    margin-top: 29px;
+  }
+
+  .signup-story h1 {
+    font-size: 43px;
+    max-width: 360px;
+    margin: 12px 0 10px;
+  }
+
+  .signup-story-copy p {
+    font-size: 12px;
+    max-width: 290px;
+  }
+
+  .signup-art {
+    position: absolute;
+    width: 220px;
+    right: 3%;
+    bottom: -18px;
+    margin: 0;
+    opacity: 0.96;
+  }
+
+  .signup-form-side {
+    padding: 28px 24px 38px;
+    flex: 1;
+  }
+
+  .signup-back {
+    margin-bottom: 24px;
+  }
+}
+
+/* Small phones: the paired grids (name fields, social buttons) go
+   single-column, and the story panel grows to fit the taller headline. */
+@media (max-width: 390px) {
+  .signup-name-row,
+  .signup-socials {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .signup-story {
+    min-height: 365px;
+  }
+
+  .signup-art {
+    width: 185px;
+    right: -6%;
+    bottom: -12px;
+  }
+}

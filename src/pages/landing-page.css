@@ -1,0 +1,263 @@
+/* ==========================================================================
+   Landing page styles (/)
+
+   Loaded by LandingPage.jsx, so these rules only ship when the landing page
+   renders. Two other stylesheets are in play alongside this one:
+
+     index.css            - fonts, design tokens (--accent etc.), CSS reset
+     styles-utilities.css - the utility classes (.flex, .mt-5, .bg-[#172d26])
+
+   What lives here is the third layer: the hand-written classes that were too
+   specific to express as utilities. Colours are pulled from the tokens in
+   index.css wherever possible, so the palette stays in one place.
+   ========================================================================== */
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+
+/* Used by `.reveal.is-visible`, applied by the useReveal hook when an element
+   scrolls into view. */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* The line that sweeps down the mock editor. The 252px travel is roughly the
+   editor body's height -- adjust it if that panel is resized. */
+@keyframes scan-line {
+  0% { transform: translateY(-8px); opacity: 0; }
+  12%, 80% { opacity: .78; }
+  100% { transform: translateY(252px); opacity: 0; }
+}
+
+/* ==========================================================================
+   Page frame and typography
+   ========================================================================== */
+/* The serif face for headlines and the mono face for labels. */
+.font-display { font-family: var(--app-font-serif); }
+.font-mono { font-family: var(--app-font-mono); }
+
+.site-shell { min-height: 100dvh; background: hsl(var(--background)); }
+
+/* The shared page gutter. Every section's inner wrapper uses this, which is
+   what keeps all the content aligned to one column. */
+.container-wide { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
+
+/* Small uppercase label with a rule before it ("02 / consistent clarity"). */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--app-font-mono);
+  font-size: 11px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: hsl(var(--accent));
+}
+/* Scroll-reveal. Elements start hidden and are only shown once useReveal adds
+   `is-visible`, so if that hook is removed the page would render blank --
+   the reduced-motion block at the bottom is the safety net for that case.
+   `forwards` holds the final frame instead of snapping back to opacity 0. */
+.reveal { opacity: 0; transform: translateY(22px); }
+.reveal.is-visible { animation: reveal-up .75s cubic-bezier(.22, .8, .22, 1) forwards; }
+
+/* Stagger helpers for revealing a group in sequence. `!important` is needed
+   because the shorthand `animation` above also resets animation-delay. */
+.reveal-delay-1 { animation-delay: .1s !important; }
+.reveal-delay-2 { animation-delay: .2s !important; }
+.reveal-delay-3 { animation-delay: .3s !important; }
+.reveal-delay-4 { animation-delay: .4s !important; }
+
+/* ==========================================================================
+   Document mockups -- the fake paper and editor surfaces
+   ========================================================================== */
+
+/* Faint graph-paper ruling, drawn as two 1px gradients crossing. */
+.paper-grid {
+  background-image: linear-gradient(hsl(160 29% 16% / .06) 1px, transparent 1px), linear-gradient(90deg, hsl(160 29% 16% / .06) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+/* Grey bars standing in for lines of text on the light document sheet;
+   `.highlight` marks the one the product has flagged. */
+.doc-sheet-line {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: hsl(160 29% 13% / .18);
+}
+.doc-sheet-line.highlight {
+  background: hsl(39 72% 47% / .5);
+}
+/* The four action tiles are identical in JSX; these nth-child rules vary the
+   green so the row reads as a gradient across them. */
+.feature-tile:nth-child(2) { background: hsl(160 24% 20%); }
+.feature-tile:nth-child(3) { background: hsl(160 29% 13%); }
+.feature-tile:nth-child(4) { background: hsl(160 24% 22%); }
+/* Film-grain overlay across the whole viewport, from an inlined SVG noise
+   filter. `fixed` keeps it still while the page scrolls, and `pointer-events:
+   none` lets clicks pass through to the content underneath. */
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .035;
+  z-index: 30;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+/* Colour and padding come from utility classes in the JSX; these rules only
+   add the shared motion and focus treatment. */
+.btn-primary, .btn-ghost, .btn-text {
+  transition: transform .25s ease, background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+.btn-primary:hover, .btn-ghost:hover { transform: translateY(-2px); }
+.btn-primary:active, .btn-ghost:active { transform: translateY(0); }
+/* `:focus-visible` rather than `:focus`, so the ring appears for keyboard
+   users but not on mouse clicks. */
+.btn-primary:focus-visible, .btn-ghost:focus-visible, .btn-text:focus-visible, .nav-link:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid hsl(var(--accent));
+  outline-offset: 4px;
+}
+/* ==========================================================================
+   Hero
+   ========================================================================== */
+
+/* Concentric rings drifting off the right edge. `--parallax-y` is written to
+   <html> by the useParallax hook, so the orb moves on scroll without React
+   re-rendering; the `0px` fallback keeps it in place before the first scroll. */
+.hero-orb {
+  position: absolute;
+  width: 540px;
+  height: 540px;
+  right: -180px;
+  top: 110px;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--accent) / .35);
+  box-shadow: inset 0 0 0 36px hsl(var(--accent) / .035), inset 0 0 0 72px hsl(var(--accent) / .03);
+  pointer-events: none;
+  transform: translateY(var(--parallax-y, 0px));
+}
+.hero-orb-light {
+  right: -185px;
+  top: 160px;
+  opacity: .35;
+}
+.hero-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+/* Grid texture inside the dark hero panel. `isolation: isolate` on the parent
+   creates a new stacking context, so this `z-index: -1` layer sits behind the
+   panel's text but still above the panel's own background. The mask fades the
+   grid out towards the bottom. */
+.hero-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: .45;
+  background-image: linear-gradient(hsl(42 31% 92% / .045) 1px, transparent 1px), linear-gradient(90deg, hsl(42 31% 92% / .045) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+.hero-orb::before, .hero-orb::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--accent) / .22);
+}
+.hero-orb::before { inset: 72px; }
+.hero-orb::after { inset: 145px; }
+/* ==========================================================================
+   Mock editor (EditorWindow, and reused by several feature visuals)
+   ========================================================================== */
+
+.editor-window {
+  background: hsl(160 29% 15%);
+  border: 1px solid hsl(42 31% 92% / .14);
+  box-shadow: 0 26px 60px hsl(160 29% 8% / .3), 0 2px 0 hsl(42 31% 92% / .08) inset;
+}
+/* Document area plus a fixed-width insights sidebar. Both collapse to a
+   single column under 800px, where the sidebar is hidden entirely. */
+.editor-body {
+  display: grid;
+  grid-template-columns: 1fr 190px;
+  min-height: 310px;
+}
+/* Text stand-ins inside the dark editor. The JSX sets each width inline; the
+   nth-child rules then recolour and re-size a few of them so the block looks
+   like prose rather than an even stack of identical bars. */
+.doc-lines > span {
+  display: block;
+  height: 7px;
+  margin-bottom: 12px;
+  border-radius: 2px;
+  background: hsl(42 31% 92% / .22);
+}
+.doc-lines > span:nth-child(3n) { background: hsl(var(--accent) / .38); }
+.doc-lines > span:nth-child(4n) { width: 68%; }
+.doc-lines > span:nth-child(5n) { width: 82%; }
+/* The glowing line sweeping down the editor, suggesting an active scan. */
+.editor-scan {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 18px;
+  height: 1px;
+  background: hsl(var(--accent));
+  box-shadow: 0 0 14px hsl(var(--accent) / .85);
+  animation: scan-line 4.3s ease-in-out infinite;
+}
+/* Half of the nav switch: hidden here, shown in the 800px block below, where
+   `.desktop-nav` is hidden in turn. */
+.mobile-only { display: none; }
+
+/* the FAQ grid needs the 2nd-to-last item's bottom border removed on desktop
+   too, since in a 2-column layout that item also sits on the visual bottom
+   row (only the very last item is covered by :last-child). */
+@media (min-width: 48rem) {
+  .faq-item:nth-last-child(2) { border-bottom-width: 0; }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+/* Tablet and below: swap to the hamburger nav, drop the editor's sidebar,
+   and pull the hero orb further off-screen so it doesn't crowd the text. */
+@media (max-width: 800px) {
+  .container-wide { width: min(100% - 32px, 620px); }
+  .hero-orb { width: 360px; height: 360px; right: -190px; top: 200px; }
+  .hero-orb-light { right: -210px; top: 230px; }
+  .editor-body { grid-template-columns: 1fr; }
+  .editor-insights { display: none; }
+  .mobile-only { display: inline-flex; }
+  .desktop-nav { display: none; }
+}
+/* Phones: tighter gutter, and the editor's decorative tilt is cancelled --
+   at this width a rotated panel overflows the viewport. */
+@media (max-width: 520px) {
+  .container-wide { width: min(100% - 28px, 620px); }
+  .editor-window { transform: none !important; }
+  .hero-orb { right: -235px; top: 260px; opacity: .65; }
+  .hero-orb-light { right: -245px; top: 280px; opacity: .26; }
+}
+
+/* For visitors who ask for reduced motion, index.css disables the animations
+   globally. That alone would leave `.reveal` stuck at opacity 0, so the
+   elements are made visible here instead of being animated in. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+}
