@@ -9,6 +9,7 @@ function Router() {
   const pathname = usePathname();
   if (pathname === '/') return <LandingPage />;
   if (pathname === '/signup') return <SignUp />;
+  if (pathname === '/login') return <LogIn />; 
   return <NotFound />;
 }
 

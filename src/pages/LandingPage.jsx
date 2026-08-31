@@ -784,7 +784,7 @@ function LandingPage() {
             <a href="#top" className="nav-link text-xs text-[#53675c] transition-colors hover:text-[#b67d18]">Dashboard</a>
             <a href="#instrument" className="nav-link text-xs text-[#53675c] transition-colors hover:text-[#b67d18]">Editor</a>
             <a href="#principles" className="nav-link text-xs text-[#53675c] transition-colors hover:text-[#b67d18]">Features</a>
-            <button type="button" onClick={() => setModalOpen(true)} className="nav-link ml-1 text-xs text-[#53675c] transition-colors hover:text-[#b67d18]">Sign in</button>
+            <button type="button" onClick={() => navigate('/login')} className="nav-link ml-1 text-xs text-[#53675c] transition-colors hover:text-[#b67d18]">Sign in</button>
             <button type="button" onClick={() => navigate('/signup')} className="btn-primary ml-1 border border-[#d8a53c] bg-[#d8a53c] px-4 py-2 text-xs font-semibold text-[#172d26]">Get started</button>
           </nav>
           <button type="button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)} className="mobile-only text-[#172d26]"><Menu size={22} /></button>
@@ -825,7 +825,7 @@ function LandingPage() {
                 DocuMend keeps your documents on your machine. No cloud send, no training data, just your draft getting clearer.
               </p>
               <div className="reveal reveal-delay-3 mt-8 flex flex-wrap items-center justify-center gap-3">
-                <button type="button" onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-3 bg-[#d8a53c] px-5 py-3 text-sm font-semibold text-[#172d26]">Start writing <ArrowRight size={16} /></button>
+                <button type="button" onClick={() => navigate('/signup')} className="btn-primary flex items-center gap-3 bg-[#d8a53c] px-5 py-3 text-sm font-semibold text-[#172d26]">Start writing <ArrowRight size={16} /></button>
                 <a href="#instrument" className="btn-ghost flex items-center gap-2 border border-[#91a89a]/50 px-5 py-3 text-sm text-[#e0e6db] hover:border-[#d8a53c] hover:text-[#d8a53c]">Learn more <ArrowUpRight size={15} /></a>
               </div>
               <div className="reveal reveal-delay-4 mx-auto mt-12 flex max-w-[540px] flex-wrap items-center justify-center gap-x-6 gap-y-3 border-t border-[#d8e0d6]/15 pt-4 font-mono text-[10px] text-[#91a89a]">
