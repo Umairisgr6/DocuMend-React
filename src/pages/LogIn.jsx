@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 // CSS styling specific to the Login page
 import "./LogIn.css";
+import { navigate } from "../router";
 
 /* -------------------------------------------------------------------------- */
 /*                        SUB-COMPONENT: LOGIN ARTWORK                        */
@@ -169,7 +170,14 @@ export default function LogIn() {
   // Handles form submission
   const handleSubmit = (event) => {
     event.preventDefault();
-    
+
+    // Second press, once signed in: the button has become the way into the
+    // app, so take them there instead of re-validating the form.
+    if (submitted) {
+      navigate("/dashboard");
+      return;
+    }
+
     // Mark both fields as touched when the user clicks submit
     setTouched({ email: true, password: true });
 
@@ -357,10 +365,11 @@ export default function LogIn() {
               </div>
             )}
 
-            {/* SUBMIT BUTTON */}
+            {/* SUBMIT BUTTON — keeps the arrow in the success state too, since
+                the button then leads to the dashboard rather than sitting idle */}
             <button className="login-submit" type="submit">
               {submitted ? "You’re all set" : "Log in to DocuMend"}
-              {!submitted && <ArrowRight size={16} />}
+              <ArrowRight size={16} />
             </button>
           </form>
 

@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import "./sign-up.css";
+import { navigate } from "../router";
 
 // Blank starting values. Every input below is controlled, so each field needs
 // a defined string here -- `undefined` would make React treat them as
@@ -164,6 +165,14 @@ export default function SignUp() {
 
   const handleSubmit = (event) => {
     event.preventDefault(); // keep the browser from doing a full page reload
+
+    // Second press, once the account exists: the button has become the way
+    // into the app, so take them there instead of re-validating the form.
+    if (submitted) {
+      navigate('/dashboard');
+      return;
+    }
+
     // Mark everything touched so that submitting an empty form reveals all
     // the errors at once, including for fields never focused.
     const nextTouched = {
@@ -368,9 +377,11 @@ export default function SignUp() {
               </div>
             )}
 
+            {/* Keeps the arrow in the success state too: the button is no
+                longer a passive "done" label, it now leads to the dashboard. */}
             <button className="signup-submit" type="submit">
               {submitted ? "You're all set" : "Create my account"}
-              {!submitted && <ArrowRight size={16} />}
+              <ArrowRight size={16} />
             </button>
           </form>
 
