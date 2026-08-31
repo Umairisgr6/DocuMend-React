@@ -2,6 +2,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
 import NotFound from './pages/NotFound';
 import SignUp from './pages/SignUp';
+import LogIn from './pages/LogIn';
 import { usePathname } from './router';
 
 function Router() {
