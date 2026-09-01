@@ -1,6 +1,7 @@
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
+import Features from './pages/Features';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
@@ -22,6 +23,7 @@ function Router() {
   if (pathname === '/documents') return <MyDocuments />;
   if (pathname === '/editor') return <Editor />;
   if (pathname === '/version') return <VersionHistory />;
+  if (pathname === '/features') return <Features />;
   // Two paths for one page: the sidebar calls it Subscription, the landing
   // page links to Pricing.
   if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;

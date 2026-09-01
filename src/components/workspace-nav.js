@@ -33,6 +33,7 @@ export const workspaceRoutes = {
   Editor: '/editor',
   'Version history': '/version',
   Subscription: '/subscription',
+  Features: '/features',
 };
 
 export const navPrimary = [
