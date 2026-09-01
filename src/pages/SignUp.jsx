@@ -413,13 +413,9 @@ export default function SignUp() {
             {socialMessage}
           </p>
 
-          {/* TODO: point this at a real login route once one exists. */}
           <p className="signup-login">
             Already have an account?{" "}
-            <button
-              type="button"
-              onClick={() => setSocialMessage("Login is opening for you.")}
-            >
+            <button type="button" onClick={() => navigate("/login")}>
               Log in
             </button>
           </p>

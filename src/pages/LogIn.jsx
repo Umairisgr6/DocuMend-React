@@ -404,10 +404,7 @@ export default function LogIn() {
           {/* SIGN UP REDIRECTION */}
           <p className="login-signup">
             New to DocuMend?{" "}
-            <button
-              type="button"
-              onClick={() => setMessage("Sign up is opening for you.")}
-            >
+            <button type="button" onClick={() => navigate("/signup")}>
               Create an account
             </button>
           </p>
