@@ -198,6 +198,7 @@ function Editor() {
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [heatmapEnabled, setHeatmapEnabled] = useState(true);
   const [documentPanelExpanded, setDocumentPanelExpanded] = useState(true);
+  const [findMatches, setFindMatches] = useState(0);
 
   const editorRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -289,6 +290,19 @@ function Editor() {
     announce(message);
   };
 
+  // Counting happens here, on the keystroke, rather than during render: the
+  // document text lives in a ref, and reading a ref while rendering gives a
+  // stale answer because changing it does not schedule a re-render.
+  const updateFind = (query) => {
+    setFindQuery(query);
+    if (!query) {
+      setFindMatches(0);
+      return;
+    }
+    const text = editorRef.current?.innerText.toLowerCase() ?? '';
+    setFindMatches(text.split(query.toLowerCase()).length - 1);
+  };
+
   const addComment = () => {
     setCommentCount((count) => count + 1);
     announce('Comment added to the document');
@@ -350,10 +364,6 @@ function Editor() {
   const visibleDocuments = documents
     .filter((doc) => doc.title.toLowerCase().includes(documentSearch.toLowerCase()))
     .slice(0, 5);
-  // Rough match count for the find bar: split on the query and count the gaps.
-  const findMatches = findQuery
-    ? (editorRef.current?.innerText.toLowerCase().split(findQuery.toLowerCase()).length ?? 1) - 1
-    : 0;
 
   return (
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
@@ -742,9 +752,9 @@ function Editor() {
             {showFind && (
               <div className="editor-findbar">
                 <Search size={15} />
-                <input autoFocus value={findQuery} onChange={(event) => setFindQuery(event.target.value)} placeholder="Find in document" aria-label="Find in document" />
+                <input autoFocus value={findQuery} onChange={(event) => updateFind(event.target.value)} placeholder="Find in document" aria-label="Find in document" />
                 <span>{findQuery ? `${findMatches} matches` : 'Type to search'}</span>
-                <button type="button" onClick={() => { setFindQuery(''); setShowFind(false); }} aria-label="Close find bar"><X size={14} /></button>
+                <button type="button" onClick={() => { updateFind(''); setShowFind(false); }} aria-label="Close find bar"><X size={14} /></button>
               </div>
             )}
 
