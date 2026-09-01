@@ -45,16 +45,17 @@
   background-image: linear-gradient(rgba(31, 61, 52, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(31, 61, 52, .035) 1px, transparent 1px);
   background-size: 36px 36px;
 }
+/* Was a bordered, rounded, shadowed card capped at 1500px and centred, which
+   left gutters on wide screens and read as a panel inside the workspace
+   chrome's panel. It fills its column now; the paper canvas inside
+   (.editor-paper-wrap) still holds the reading measure, which is what should
+   be constraining line length -- not the whole instrument rail.
+   overflow stays hidden: the internal grid relies on it. */
 .editor-workspace {
   position: relative;
   z-index: 1;
   overflow: hidden;
-  max-width: 1500px;
-  margin: 0 auto;
-  border: 1px solid rgba(34, 58, 48, .2);
-  border-radius: 19px;
   background: #f4efe5;
-  box-shadow: 0 20px 48px rgba(54, 47, 35, .13);
 }
 .editor-topbar {
   display: flex;
@@ -1359,13 +1360,9 @@
   }
 }
 @media (max-width: 640px) {
-  .editor-page {
-    padding-right: 9px;
-    padding-left: 9px;
-  }
-  .editor-workspace {
-    border-radius: 13px;
-  }
+  /* The 9px side padding and the smaller corner radius both existed to inset
+     the card. With no card, the page runs to the edge here too -- which is
+     what you want on a phone. */
   .editor-topbar {
     flex-wrap: wrap;
   }
@@ -1409,7 +1406,8 @@
     radial-gradient(circle at 96% 0%, rgba(213, 158, 53, .1), transparent 24rem),
     #222f2a;
 }
-.dash-dark .editor-workspace { border-color: rgba(228, 190, 111, .16); background: #1b2d27; }
+/* border-color dropped with the card frame; only the ground is left. */
+.dash-dark .editor-workspace { background: #1b2d27; }
 .dash-dark .editor-toolkit { border-color: #30463b; background: #20372f; }
 .dash-dark .editor-tool-group { border-color: #365146; }
 .dash-dark .editor-tool-button { color: #b5c8ba; }
