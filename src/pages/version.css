@@ -18,7 +18,9 @@
   min-height: 100dvh;
   position: relative;
   overflow-x: hidden;
-  padding: clamp(16px, 3vw, 44px);
+  /* No padding: the page content used to sit in an inset white card, which
+     read as a window floating on the page. The content is full-bleed now and
+     .history-content does the centring instead. */
   color: var(--history-ink);
   background:
     radial-gradient(circle at 4% 12%, rgba(217, 107, 84, 0.12), transparent 23%),
@@ -27,6 +29,11 @@
   font-family: "DM Sans", sans-serif;
   height: auto !important;
   overflow: visible !important;
+  /* The decorative orbits sit past the left and right edges. `clip` trims
+     them without making this a scroll container, which `hidden` would do --
+     and that would stop the sticky topbar from sticking. Needs !important
+     only because the shorthand above is. */
+  overflow-x: clip !important;
 }
 
 .history-shell::before {
@@ -65,32 +72,42 @@
   border-color: rgba(217, 107, 84, 0.16);
 }
 
+/* Was a bordered, rounded, shadowed white card inset inside the shell. That
+   frame fought with the workspace chrome around it -- a panel inside a panel
+   -- so it is now a plain full-width container. What made it feel composed
+   (the centred measure, the layered background, the rise-in) is kept; only
+   the box is gone. */
 .history-app {
-  width: min(1260px, 100%);
-  min-height: min(940px, calc(100dvh - 88px));
+  width: 100%;
   position: relative;
   z-index: 1;
-  margin: 0 auto;
-  overflow: hidden;
-  border: 1px solid rgba(37, 76, 62, 0.13);
-  border-radius: 16px;
-  background: rgba(247, 250, 245, 0.9);
-  box-shadow: 0 30px 76px rgba(44, 66, 55, 0.15), 0 4px 13px rgba(44, 66, 55, 0.06);
   animation: history-rise 0.7s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-app {
+    animation: none;
+  }
 }
 
 /* ==========================================================================
    TOPBAR
    ========================================================================== */
+/* Full-bleed now that the card is gone, and sticky: it is this page's only
+   toolbar, so it should stay reachable while the timeline scrolls. */
 .history-topbar {
-  min-height: 65px;
+  min-height: 68px;
   display: flex;
+  position: sticky;
+  z-index: 5;
+  top: 0;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
-  padding: 0 29px;
+  padding: 0 clamp(18px, 3vw, 45px);
   border-bottom: 1px solid #dce6dd;
-  background: rgba(255, 253, 248, 0.94);
+  background: rgba(255, 253, 248, 0.88);
+  backdrop-filter: blur(12px);
 }
 
 .history-topbar-left,
@@ -261,10 +278,12 @@
 /* ==========================================================================
    PAGE CONTENT & HERO
    ========================================================================== */
+/* The measure that keeps the page feeling composed without a frame around
+   it: content stays centred and capped, the background runs edge to edge. */
 .history-content {
-  width: min(1080px, calc(100% - 90px));
+  width: min(1080px, 100%);
   margin: 0 auto;
-  padding: 31px 0 24px;
+  padding: 34px clamp(18px, 3vw, 45px) 40px;
 }
 
 .history-breadcrumbs {
@@ -1436,10 +1455,10 @@
     padding: 0;
   }
 
+  /* The border and radius resets that used to live here are gone with the
+     card itself. */
   .history-app {
     min-height: 100dvh;
-    border: 0;
-    border-radius: 0;
   }
 
   .history-topbar {
@@ -1832,13 +1851,15 @@ body:has(.dash-dark) {
   opacity: 0.15 !important;
 }
 
-.dash-dark .history-app {
+/* .history-app no longer paints anything -- the card it used to be is gone,
+   so the dark ground belongs on the shell instead. Leaving the old rule here
+   would have restored the frame in dark mode only. */
+.dash-dark .history-shell {
   background: #15221e !important;
-  border-color: #20352e !important;
 }
 
 .dash-dark .history-topbar {
-  background: #182823 !important;
+  background: rgba(24, 40, 35, 0.88) !important;
   border-bottom: 1px solid #223a32 !important;
 }
 
