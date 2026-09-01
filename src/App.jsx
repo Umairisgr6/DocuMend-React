@@ -2,7 +2,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import CreateDocument from './pages/CreateDocument';
 import CreateFolder from './pages/CreateFolder';
 import Dashboard from './pages/Dashboard';
-import Editor from './pages/Editor';
+import Editor from './pages/editor';
 import Features from './pages/Features';
 import Help from './pages/Help';
 import LandingPage from './pages/LandingPage';
