@@ -1,0 +1,1094 @@
+/**
+ * upload-document.css — the document import screen.
+ *
+ * Adapted from the Replit prototype's stylesheet. Two structural changes were
+ * needed to bring it into this project:
+ *
+ *   - Every selector is prefixed `upload-`. The prototype styled bare names
+ *     like .page-heading, .sidebar, .notice, .eyebrow and .primary-button;
+ *     three of those already exist in version.css and landing-page.css, so
+ *     unprefixed they would have silently restyled other pages.
+ *   - The prototype's own tokens are dropped in favour of the shared --dash-*
+ *     variables declared on .dash-shell, so the page follows the workspace
+ *     theme and inherits dark mode. The deep-green import panel keeps its
+ *     literal colours: it is meant to stay dark in both themes, the way the
+ *     sidebar does.
+ */
+
+.upload-page {
+  padding: 30px 30px 52px;
+}
+
+.upload-grid {
+  display: grid;
+  align-items: start;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) 290px;
+}
+
+.upload-main {
+  min-width: 0;
+}
+
+/* ==========================================================================
+   Heading
+   ========================================================================== */
+
+.upload-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.upload-heading-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-back {
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-ink-soft);
+  line-height: 0;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.upload-back:hover {
+  background: var(--dash-panel-alt);
+  color: var(--dash-ink);
+}
+
+.upload-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.upload-eyebrow strong {
+  color: var(--dash-gold-strong);
+  font-weight: 500;
+}
+
+.upload-title {
+  margin: 0;
+  color: var(--dash-ink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.upload-guide-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  background: var(--dash-card);
+  color: var(--dash-ink-soft);
+  font: 500 12px inherit;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.upload-guide-btn:hover {
+  border-color: var(--dash-gold);
+  color: var(--dash-ink);
+}
+
+.upload-inline-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid rgba(216, 165, 60, 0.4);
+  border-radius: 12px;
+  background: var(--dash-sand);
+  color: var(--dash-ink-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.upload-inline-guide svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--dash-gold-strong);
+}
+
+.upload-inline-guide p {
+  margin: 0;
+}
+
+.upload-inline-guide strong {
+  color: var(--dash-ink);
+}
+
+.upload-inline-guide .upload-dialog-close {
+  margin-left: auto;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Import panel
+
+   Stays deep green in both themes, like the sidebar -- it is the focal
+   surface of the page and reads as "the studio".
+   ========================================================================== */
+
+.upload-panel {
+  overflow: hidden;
+  border: 1px solid #294c3f;
+  border-radius: 18px;
+  background: #1e4438;
+  box-shadow: 0 18px 48px rgba(31, 59, 48, 0.13);
+}
+
+.upload-panel-head,
+.upload-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.upload-panel-head {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(203, 216, 201, 0.1);
+}
+
+.upload-panel-title {
+  margin: 0;
+  color: #eff0e4;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.upload-panel-sub {
+  margin: 6px 0 0;
+  color: #a9bdb0;
+  font-size: 12px;
+}
+
+.upload-local-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d5e0d4;
+  font: 500 10px/1 'DM Mono', monospace;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.upload-local-pill svg {
+  color: var(--dash-gold);
+}
+
+/* ==========================================================================
+   Drop zone
+   ========================================================================== */
+
+.upload-drop-zone {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 270px;
+  margin: 24px;
+  padding: 28px 20px;
+  border: 1px dashed rgba(154, 173, 160, 0.7);
+  border-radius: 14px;
+  background: #f3f0e6;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.upload-drop-zone:hover {
+  border-color: var(--dash-gold);
+  background: #f8f4e9;
+}
+
+.upload-drop-zone:focus-visible {
+  outline: 2px solid var(--dash-gold);
+  outline-offset: 3px;
+}
+
+.upload-drop-zone.is-dragging {
+  border-color: #e7bf68;
+  background: rgba(216, 165, 60, 0.13);
+}
+
+.upload-drop-zone.has-file,
+.upload-drop-zone.is-processing {
+  border-color: #8dab94;
+  border-style: solid;
+  background: #315846;
+}
+
+.upload-drop-zone.is-processing {
+  border-color: rgba(216, 165, 60, 0.6);
+}
+
+.upload-drop-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border: 1px solid #c2c6b9;
+  border-radius: 14px;
+  background: #e8e4d9;
+  color: #778e80;
+  place-items: center;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.upload-drop-zone:hover .upload-drop-icon,
+.upload-drop-zone.is-dragging .upload-drop-icon {
+  border-color: var(--dash-gold);
+  color: var(--dash-gold-strong);
+}
+
+.upload-drop-zone.has-file .upload-drop-icon,
+.upload-drop-zone.is-processing .upload-drop-icon {
+  margin-bottom: 16px;
+  border-color: #a3bea5;
+  background: rgba(141, 174, 145, 0.15);
+  color: #d1e0ce;
+}
+
+.upload-drop-zone.is-processing .upload-drop-icon {
+  border-color: rgba(216, 165, 60, 0.6);
+  background: rgba(216, 165, 60, 0.1);
+  color: #e1b75d;
+}
+
+.upload-drop-title {
+  overflow: hidden;
+  max-width: 100%;
+  margin: 0;
+  color: #28473a;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 22px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-drop-zone.has-file .upload-drop-title,
+.upload-drop-zone.is-processing .upload-drop-title {
+  color: #f1f0e4;
+  font-size: 19px;
+}
+
+.upload-drop-desc {
+  margin: 10px 0 0;
+  color: #7c8d82;
+  font-size: 12px;
+}
+
+.upload-drop-desc strong {
+  color: var(--dash-gold-strong);
+  text-decoration: underline;
+  text-decoration-color: rgba(200, 149, 61, 0.5);
+  text-underline-offset: 4px;
+}
+
+.upload-drop-zone.has-file .upload-drop-desc,
+.upload-drop-zone.is-processing .upload-drop-desc {
+  color: #b8c9ba;
+}
+
+.upload-format-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.upload-format-chip {
+  padding: 6px 11px;
+  border: 1px solid #d3d4c9;
+  border-radius: 999px;
+  background: #e9e6dc;
+  color: #77857c;
+  font: 400 10px/1 'DM Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+.upload-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: #e0b7a5;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.upload-remove:hover {
+  color: #f0d1c3;
+}
+
+.upload-progress-track {
+  overflow: hidden;
+  width: min(300px, 100%);
+  height: 4px;
+  margin-top: 24px;
+  border-radius: 999px;
+  background: rgba(221, 229, 215, 0.2);
+}
+
+.upload-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dash-gold);
+  transition: width 120ms linear;
+}
+
+/* ==========================================================================
+   Callout, analysis options, panel footer
+   ========================================================================== */
+
+.upload-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: -8px 24px 0;
+  padding: 13px 16px;
+  border: 1px solid rgba(183, 201, 189, 0.25);
+  border-radius: 12px;
+  background: #294e40;
+  color: #c5d5c8;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.upload-callout svg {
+  flex: 0 0 auto;
+  color: #9dbb9d;
+}
+
+.upload-callout strong {
+  color: #e0e7dc;
+}
+
+.upload-analysis {
+  padding: 24px;
+}
+
+.upload-analysis-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.upload-analysis-head span:first-child {
+  color: #9db2a3;
+  font: 500 10px/1 'DM Mono', monospace;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.upload-analysis-head span:last-child {
+  color: #849f90;
+  font-size: 11px;
+}
+
+.upload-analysis-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.upload-option {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid rgba(168, 190, 176, 0.35);
+  border-radius: 10px;
+  color: #c4d2c6;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.upload-option:hover {
+  background: #315846;
+}
+
+.upload-option.is-selected {
+  border-color: var(--dash-gold);
+  background: rgba(216, 165, 60, 0.15);
+  color: #f0d38d;
+}
+
+/* The real radio is hidden but still focusable and still announced. */
+.upload-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.upload-option:focus-within {
+  outline: 2px solid var(--dash-gold);
+  outline-offset: 2px;
+}
+
+.upload-radio-dot {
+  display: grid;
+  width: 13px;
+  height: 13px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  place-items: center;
+}
+
+.upload-radio-dot::after {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+  opacity: 0;
+}
+
+.upload-option.is-selected .upload-radio-dot::after {
+  opacity: 1;
+}
+
+.upload-panel-foot {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(202, 215, 202, 0.15);
+}
+
+.upload-cancel {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: #aec0b2;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-cancel:hover {
+  color: #f1f0e4;
+}
+
+.upload-foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.upload-no-cloud {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8fa697;
+  font-size: 11px;
+}
+
+.upload-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--dash-gold);
+  color: #21180a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.upload-primary:hover:not(:disabled) {
+  background: var(--dash-gold-soft);
+  transform: translateY(-2px);
+}
+
+.upload-primary:disabled {
+  background: #6d8778;
+  color: #b4c3b7;
+  cursor: not-allowed;
+}
+
+.upload-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid rgba(169, 192, 173, 0.4);
+  border-radius: 10px;
+  background: transparent;
+  color: #d9e4d7;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.upload-secondary:hover {
+  background: #315846;
+}
+
+/* ==========================================================================
+   Success state
+   ========================================================================== */
+
+.upload-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 326px;
+  margin: 24px;
+  padding: 28px 24px;
+  border: 1px solid rgba(142, 174, 146, 0.45);
+  border-radius: 14px;
+  background: #264d3e;
+  text-align: center;
+}
+
+.upload-success-icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 20px;
+  border: 1px solid #9ebd9f;
+  border-radius: 50%;
+  background: rgba(117, 157, 130, 0.2);
+  color: #d7e4cf;
+  place-items: center;
+}
+
+.upload-success-kicker {
+  margin: 0 0 8px;
+  color: #b7cdb9;
+  font: 500 11px/1 'DM Mono', monospace;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+
+.upload-success-title {
+  max-width: 520px;
+  margin: 0;
+  color: #f0f0e4;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(25px, 4vw, 31px);
+  font-weight: 400;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.upload-success-copy {
+  max-width: 400px;
+  margin: 12px 0 0;
+  color: #b7c9b9;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.upload-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+/* ==========================================================================
+   Notice + privacy line
+   ========================================================================== */
+
+.upload-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 13px 16px;
+  border-left: 3px solid #c88770;
+  border-radius: 0 10px 10px 0;
+  background: var(--dash-sand);
+  color: var(--dash-ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upload-notice[data-kind='success'] {
+  border-color: #719783;
+  background: var(--dash-done-bg);
+  color: var(--dash-done-ink);
+}
+
+.upload-notice[data-kind='error'] {
+  border-color: #b66351;
+  background: #f3dfd8;
+  color: #714b3e;
+}
+
+.upload-notice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.upload-privacy-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--dash-line);
+  color: var(--dash-ink-soft);
+  font-size: 12px;
+}
+
+.upload-privacy-line > svg {
+  color: var(--dash-gold-strong);
+}
+
+.upload-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c88770;
+}
+
+.upload-text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.upload-text-link:hover {
+  color: var(--dash-ink);
+}
+
+/* ==========================================================================
+   Side column
+   ========================================================================== */
+
+.upload-side {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.upload-recent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.upload-recent-head p {
+  margin: 0;
+  color: var(--dash-ink-muted);
+  font: 500 11px/1 'DM Mono', monospace;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.upload-library-title {
+  margin: 8px 0 0;
+  color: var(--dash-ink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 21px;
+  font-weight: 400;
+}
+
+.upload-icon-btn {
+  padding: 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-ink-soft);
+  line-height: 0;
+  cursor: pointer;
+}
+
+.upload-icon-btn:hover {
+  background: var(--dash-panel-alt);
+  color: var(--dash-ink);
+}
+
+.upload-recent-list {
+  display: grid;
+  gap: 8px;
+}
+
+.upload-recent-item {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.upload-recent-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: var(--dash-card);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.upload-recent-btn:hover {
+  border-color: var(--dash-gold);
+  transform: translateY(-2px);
+}
+
+.upload-file-glyph {
+  display: grid;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  place-items: center;
+}
+
+.upload-recent-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-recent-name,
+.upload-recent-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-recent-name {
+  color: var(--dash-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.upload-recent-meta {
+  margin-top: 6px;
+  color: var(--dash-ink-muted);
+  font-size: 11px;
+}
+
+.upload-separator {
+  margin-inline: 6px;
+  color: #c88770;
+}
+
+.upload-recent-chevron {
+  flex: 0 0 auto;
+  color: var(--dash-ink-muted);
+  transition: transform 0.18s ease;
+}
+
+.upload-recent-btn:hover .upload-recent-chevron {
+  transform: translateX(2px);
+}
+
+.upload-recent-remove {
+  display: grid;
+  flex: 0 0 auto;
+  width: 34px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: var(--dash-card);
+  color: #a46b61;
+  place-items: center;
+  cursor: pointer;
+}
+
+.upload-recent-remove:hover {
+  border-color: #b66351;
+  background: #f3dfd8;
+  color: #714b3e;
+}
+
+.upload-recent-empty {
+  padding: 18px 15px;
+  border: 1px dashed var(--dash-line);
+  border-radius: 12px;
+  background: var(--dash-card);
+  color: var(--dash-ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upload-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--dash-gold-strong);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.upload-note-wrap {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.upload-note-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dash-ink-muted);
+  font: 500 11px/1 'DM Mono', monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.upload-note {
+  margin: 14px 0 0;
+  color: var(--dash-ink-soft);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.upload-note-by {
+  margin: 12px 0 0;
+  color: var(--dash-ink-muted);
+  font-size: 11px;
+}
+
+/* ==========================================================================
+   Dialog
+   ========================================================================== */
+
+.upload-scrim {
+  display: grid;
+  position: fixed;
+  z-index: 70;
+  inset: 0;
+  padding: 20px;
+  background: rgba(23, 55, 45, 0.48);
+  place-items: center;
+}
+
+.upload-dialog {
+  overflow: auto;
+  width: min(520px, 100%);
+  max-height: min(640px, calc(100dvh - 40px));
+  padding: 26px;
+  border: 1px solid var(--dash-line);
+  border-radius: 18px;
+  background: var(--dash-card);
+  box-shadow: 0 24px 70px rgba(18, 46, 37, 0.24);
+}
+
+.upload-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.upload-dialog-kicker {
+  margin: 0 0 6px;
+  color: var(--dash-gold-strong);
+  font: 500 11px/1 'DM Mono', monospace;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.upload-dialog-title {
+  margin: 0;
+  color: var(--dash-ink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.upload-dialog-close {
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dash-ink-soft);
+  line-height: 0;
+  cursor: pointer;
+}
+
+.upload-dialog-close:hover {
+  background: var(--dash-panel-alt);
+  color: var(--dash-ink);
+}
+
+.upload-dialog-copy {
+  margin: 18px 0 0;
+  color: var(--dash-ink-soft);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.upload-dialog-list {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.upload-dialog-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--dash-ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upload-dialog-list svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--dash-gold-strong);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 1023px) {
+  .upload-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .upload-page {
+    padding: 24px 18px 40px;
+  }
+
+  .upload-heading {
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  /* Icon only -- the label does not fit beside the title on a phone. */
+  .upload-guide-btn span {
+    display: none;
+  }
+
+  .upload-panel-head,
+  .upload-panel-foot,
+  .upload-analysis {
+    padding-inline: 18px;
+  }
+
+  .upload-panel-head {
+    align-items: flex-start;
+  }
+
+  .upload-drop-zone {
+    margin: 18px;
+  }
+
+  .upload-callout {
+    margin-inline: 18px;
+  }
+
+  .upload-panel-foot {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .upload-cancel {
+    order: 2;
+  }
+
+  .upload-foot-actions {
+    justify-content: space-between;
+    width: 100%;
+    order: 1;
+  }
+
+  .upload-primary {
+    flex: 1;
+  }
+
+  .upload-privacy-line {
+    flex-wrap: wrap;
+    gap: 10px;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-drop-zone {
+    min-height: 252px;
+    margin: 16px;
+    padding-inline: 14px;
+  }
+
+  .upload-analysis-options {
+    flex-direction: column;
+  }
+
+  .upload-option {
+    justify-content: flex-start;
+  }
+
+  .upload-no-cloud {
+    display: none;
+  }
+}
