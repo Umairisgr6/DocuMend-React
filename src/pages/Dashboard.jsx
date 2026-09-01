@@ -668,8 +668,10 @@ function Dashboard() {
   };
 
   // Navigates to editor for a new blank document
+  // The setup screen collects the name, type, folder and analysis passes,
+  // then opens the editor itself.
   const openNewDocument = () => {
-    navigate('/editor');
+    navigate('/create-document');
   };
 
   // Navigates to editor to edit the document
