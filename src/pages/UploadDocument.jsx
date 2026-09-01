@@ -52,6 +52,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 
 const RECENT_STORAGE_KEY = 'documend-recent-documents';
@@ -81,12 +82,6 @@ function formatRelativeTime(timestamp) {
   return days === 1 ? 'Edited yesterday' : `Edited ${days} days ago`;
 }
 
-/**
- * Reads the saved list, discarding anything that is not shaped like a record
- * we wrote. localStorage is shared with whatever else lives on this origin
- * and survives across versions of the app, so the contents cannot be trusted
- * to still match the current shape.
- */
 function readRecentDocuments() {
   try {
     const saved = window.localStorage.getItem(RECENT_STORAGE_KEY);
@@ -112,8 +107,7 @@ function writeRecentDocuments(documents) {
   try {
     window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(documents));
   } catch {
-    // Private browsing can refuse writes. The session still works; the list
-    // simply will not survive a reload.
+    // Private browsing fallback
   }
 }
 
@@ -138,31 +132,31 @@ function FileGlyph({ type, color }) {
    ========================================================================== */
 
 export default function UploadDocument() {
-  // Shared workspace chrome state, matching every other signed-in page.
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  // Shared workspace chrome state
   const [activeNav, setActiveNav] = useState('Dashboard');
-  const [darkMode, setDarkMode] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState('');
   const [chromeModal, setChromeModal] = useState(null);
 
-  // Import state.
+  // Import state
   const inputRef = useRef(null);
   const processTimer = useRef(null);
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [stage, setStage] = useState('idle'); // idle | processing | success
+  const [stage, setStage] = useState('idle');
   const [progress, setProgress] = useState(0);
   const [analysisMode, setAnalysisMode] = useState('auto');
   const [guideOpen, setGuideOpen] = useState(false);
-  const [dialog, setDialog] = useState(null); // 'guide' | 'privacy' | null
+  const [dialog, setDialog] = useState(null);
   const [notice, setNotice] = useState('');
   const [noticeKind, setNoticeKind] = useState('info');
   const [recentDocuments, setRecentDocuments] = useState(readRecentDocuments);
 
-  // Escape closes the dialog. Re-bound per dialog so the listener is gone
-  // whenever nothing is open.
   useEffect(() => {
     if (!dialog) return undefined;
     const handleKeyDown = (event) => {
@@ -172,8 +166,6 @@ export default function UploadDocument() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [dialog]);
 
-  // The progress ticker outlives a render, so it has to be cleared if the
-  // page unmounts mid-import.
   useEffect(() => {
     return () => {
       if (processTimer.current) clearInterval(processTimer.current);
@@ -185,13 +177,22 @@ export default function UploadDocument() {
     setNoticeKind(kind);
   };
 
-  // Labels with a real page route there; the rest highlight and say so.
   const selectNav = (label) => {
     const route = workspaceRoutes[label];
     if (route) {
       navigate(route);
       return;
     }
+    if (label === 'Dashboard') return navigate('/dashboard');
+    if (label === 'Editor') return navigate('/editor');
+    if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
+    if (label === 'Version history') return navigate('/version');
+    if (label === 'Features') return navigate('/features');
+    if (label === 'Settings') return navigate('/settings');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
+
     setActiveNav(label);
     showNotice(`${label} view selected`);
     setMobileSidebar(false);
@@ -216,7 +217,6 @@ export default function UploadDocument() {
 
   const handleBrowse = (event) => {
     acceptFile(event.target.files?.[0]);
-    // Clear the input so picking the same file twice still fires onChange.
     event.target.value = '';
   };
 
@@ -240,8 +240,6 @@ export default function UploadDocument() {
     setNotice('');
   };
 
-  // The import is simulated: there is no backend yet, so the bar advances on
-  // a timer and the document is recorded as metadata only.
   const beginImport = () => {
     if (!file || stage === 'processing') return;
     setStage('processing');
@@ -322,7 +320,7 @@ export default function UploadDocument() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -332,7 +330,7 @@ export default function UploadDocument() {
         privacyMode={privacyMode}
         onPrivacyToggle={() => setPrivacyMode((current) => !current)}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setChromeModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
@@ -356,9 +354,6 @@ export default function UploadDocument() {
 
         <div className="upload-page">
           <div className="upload-grid">
-            {/* ---------------------------------------------------------- */}
-            {/* Main column: heading, import panel, notice, privacy line    */}
-            {/* ---------------------------------------------------------- */}
             <section className="upload-main">
               <div className="upload-heading">
                 <div className="upload-heading-left">
@@ -444,8 +439,6 @@ export default function UploadDocument() {
                   </div>
                 ) : (
                   <>
-                    {/* The drop zone is a div acting as a button, so it needs
-                        the role, the tabIndex and its own key handler. */}
                     <div
                       className={dropZoneClass}
                       role="button"
@@ -501,8 +494,6 @@ export default function UploadDocument() {
                             type="button"
                             className="upload-remove"
                             onClick={(event) => {
-                              // The whole zone is clickable; without this the
-                              // file picker would open behind the removal.
                               event.stopPropagation();
                               removeFile();
                             }}
@@ -614,9 +605,6 @@ export default function UploadDocument() {
               </div>
             </section>
 
-            {/* ---------------------------------------------------------- */}
-            {/* Side column: the locally stored recent list                 */}
-            {/* ---------------------------------------------------------- */}
             <aside className="upload-side">
               <div className="upload-recent-head">
                 <div>
@@ -702,7 +690,6 @@ export default function UploadDocument() {
         </div>
       </main>
 
-      {/* Page dialogs: the privacy promise and the import guide. */}
       {dialog && (
         <div
           className="upload-scrim"
