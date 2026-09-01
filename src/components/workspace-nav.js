@@ -22,9 +22,17 @@ import {
 
 // Labels that lead to a real page. A page's onNavigate checks here first and
 // falls back to a "view selected" toast for everything else.
+//
+// Keep this in step with the route table in App.jsx: a label missing from
+// here is a dead sidebar link even when its route exists. The entries below
+// are every label that currently has a page; the rest of navPrimary and all
+// of navWorkspace are still placeholders.
 export const workspaceRoutes = {
   Dashboard: '/dashboard',
   'My documents': '/documents',
+  Editor: '/editor',
+  'Version history': '/version',
+  Subscription: '/subscription',
 };
 
 export const navPrimary = [
