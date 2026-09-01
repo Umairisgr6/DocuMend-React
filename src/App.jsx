@@ -28,6 +28,8 @@ import Settings from './pages/settings';
 import Help from './pages/Help';
 import Storage from './pages/storage';
 import Share from './pages/Share';
+import CreateDocument from './pages/CreateDocument'; // <-- Import karein
+import CreateFolder from './pages/CreateFolder';
 
 // Custom lightweight router hook
 import { usePathname } from './router';
@@ -49,6 +51,8 @@ function Router() {
   if (pathname === '/editor') return <Editor />;
   if (pathname === '/version' || pathname === '/version-history') return <VersionHistory />;
   if (pathname === '/features') return <Features />;
+  if (pathname === '/create-document' || pathname === '/createdocument') return <CreateDocument />; // <-- Add route
+  if (pathname === '/create-folder' || pathname === '/createfolder') return <CreateFolder />;
   if (pathname === '/settings') return <Settings />;
   if (pathname === '/help' || pathname === '/help-and-guide') return <Help />;
   if (pathname === '/storage') return <Storage />;

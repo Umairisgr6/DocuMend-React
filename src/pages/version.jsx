@@ -30,6 +30,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import "./version.css";
 
@@ -241,10 +242,12 @@ export default function VersionHistory() {
   const [docDropdownOpen, setDocDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   // Workspace Chrome Shell States
   const [activeNav, setActiveNav] = useState('Version history');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -343,6 +346,7 @@ export default function VersionHistory() {
     if (label === 'Settings') return navigate('/settings');
     if (label === 'Help and Guide') return navigate('/help');
     if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Version history') notify(`${label} view selected`);
@@ -358,7 +362,7 @@ export default function VersionHistory() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -367,14 +371,14 @@ export default function VersionHistory() {
         onNavigate={selectNav}
         privacyMode={privacyMode}
         onPrivacyToggle={() => {
-          setPrivacyMode((current) => !current);
+          setPrivacyMode((prev) => !prev);
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
 
       <MobileDrawer
@@ -382,7 +386,7 @@ export default function VersionHistory() {
         onClose={() => setMobileSidebar(false)}
         activeNav={activeNav}
         onNavigate={selectNav}
-        onPrivacyToggle={() => setPrivacyMode((current) => !current)}
+        onPrivacyToggle={() => setPrivacyMode((prev) => !prev)}
         onLogout={() => setModal('logout')}
       />
 

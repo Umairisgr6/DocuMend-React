@@ -1,9 +1,9 @@
 /**
  * Dashboard — the signed-in workspace home, served at the `/dashboard` route.
  *
- * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
+ * Integrated with the shared ThemeContext and direct quick-action navigations.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './dashboard.css';
 import {
   ArrowUpRight,
@@ -145,8 +145,10 @@ function DocumentRow({ doc, selected, onSelect, onOpen }) {
    The page
    ========================================================================== */
 function Dashboard() {
-  // Global Shared Theme
   const { darkMode, toggleDarkMode } = useTheme();
+
+  // Hidden file input reference for device file browsing
+  const fileInputRef = useRef(null);
 
   // Workspace Chrome shell states
   const [activeNav, setActiveNav] = useState('Dashboard');
@@ -178,7 +180,6 @@ function Dashboard() {
 
   const announce = (message) => setToast(message);
 
-  // Navigates directly if route exists in workspaceRoutes or handles defaults
   const selectNav = (label) => {
     const route = workspaceRoutes?.[label];
     if (route && label !== 'Dashboard') {
@@ -186,7 +187,6 @@ function Dashboard() {
       return;
     }
     
-    // Direct fallbacks for common sidebar labels
     if (label === 'Editor') return navigate('/editor');
     if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
     if (label === 'Version history') return navigate('/version');
@@ -201,8 +201,19 @@ function Dashboard() {
     setMobileSidebar(false);
   };
 
+  // 1. Create document -> navigates to /create-document
   const openNewDocument = () => {
-    navigate('/editor');
+    navigate('/CreateDocument');
+  };
+
+  // 2. Create folder -> navigates to /create-folder
+  const openNewFolder = () => {
+    navigate('/CreateFolder');
+  };
+
+  // 3. Upload click -> triggers native system file picker
+  const triggerFileBrowser = () => {
+    fileInputRef.current?.click();
   };
 
   const openEditDocument = (id) => {
@@ -214,10 +225,7 @@ function Dashboard() {
   };
 
   const submitModal = (value) => {
-    if (modal === 'folder') {
-      setModal(null);
-      announce(`Folder "${value}" created`);
-    } else if (editingId) {
+    if (editingId) {
       setDocuments((current) => current.map((doc) => (
         doc.id === editingId ? { ...doc, title: value, edited: 'Just now' } : doc
       )));
@@ -252,6 +260,11 @@ function Dashboard() {
     navigate('/editor');
   };
 
+  const handleFileInputChange = (event) => {
+    handleFiles(event.target.files);
+    event.target.value = '';
+  };
+
   const handleDrop = (event) => {
     event.preventDefault();
     handleFiles(event.dataTransfer.files);
@@ -264,6 +277,15 @@ function Dashboard() {
 
   return (
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
+      {/* Hidden File Input for Native File Browser */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        hidden
+        accept=".pdf,.doc,.docx,.txt,.rtf"
+        onChange={handleFileInputChange}
+      />
+
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
         onThemeToggle={toggleDarkMode}
@@ -326,8 +348,8 @@ function Dashboard() {
 
               <div className="dash-quick-row">
                 <QuickAction icon={Plus} title="Create document" description="Begin with a blank page" tone="gold" onClick={openNewDocument} />
-                <QuickAction icon={Upload} title="Upload / drop" description="Bring in a document" tone="green" onClick={() => navigate('/editor')} onDrop={handleDrop} />
-                <QuickAction icon={FolderPlus} title="Create folder" description="Keep thoughts together" tone="plum" onClick={() => { setDraftValue(''); setModal('folder'); }} />
+                <QuickAction icon={Upload} title="Upload / drop" description="Browse from device or drop" tone="green" onClick={triggerFileBrowser} onDrop={handleDrop} />
+                <QuickAction icon={FolderPlus} title="Create folder" description="Keep thoughts together" tone="plum" onClick={openNewFolder} />
                 <QuickAction icon={Pencil} title="Edit document" description="Continue where you left off" tone="coral" onClick={() => openEditDocument()} />
               </div>
 
