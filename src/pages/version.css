@@ -1,6 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap");
+/**
+ * version.css — styles for the Version history page only.
+ *
+ * The page wears the shared workspace chrome (see components/WorkspaceChrome
+ * .jsx), so this file no longer ships a sidebar, brand lockup or mobile top
+ * bar of its own -- those all live in workspace-chrome.css now.
+ *
+ * The palette below is declared on .dash-shell rather than :root on purpose.
+ * It used to sit on :root, which meant these colours -- and a global font,
+ * reset and button rule -- applied to every page in the app the moment this
+ * stylesheet was bundled. Keep new variables scoped here.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap");
 
-:root {
+.dash-shell {
   --deep-green: #163d35;
   --dark-green: #1d4b40;
   --panel-green: #235347;
@@ -16,27 +28,19 @@
   --blue: #79b9d5;
   --lime: #9fd56c;
   --shadow: 0 18px 50px rgba(28, 65, 53, 0.12);
+}
+
+.version-page {
+  background:
+    radial-gradient(circle at 85% 4%, rgba(187, 221, 202, 0.28), transparent 26%),
+    var(--canvas);
+  color: var(--ink);
   font-family: "DM Sans", Arial, sans-serif;
+  min-height: calc(100dvh - 61px);
+  min-width: 0;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:disabled {
+.version-page button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -46,240 +50,86 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-.version-app {
-  background:
-    radial-gradient(circle at 85% 4%, rgba(187, 221, 202, 0.3), transparent 22%),
-    var(--canvas);
-  color: var(--ink);
-  min-height: 100vh;
-}
+/* ==========================================================================
+   Document banner
 
-.version-layout {
-  display: grid;
-  grid-template-columns: 245px minmax(0, 1fr);
-  min-height: 100vh;
-}
-
-/* Sidebar */
-
-.version-sidebar {
-  background: linear-gradient(180deg, #173e36 0%, #1d4b40 100%);
-  color: #dcece2;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 26px 15px 17px;
-  position: relative;
-  z-index: 20;
-}
-
-.version-brand {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-}
-
-.version-brand-mark {
-  align-items: center;
-  background: #e7c36e;
-  border: 1px solid #c79d4b;
-  border-radius: 7px;
-  display: flex;
-  height: 35px;
-  justify-content: center;
-  transform: rotate(-4deg);
-  width: 35px;
-}
-
-.version-brand-mark span {
-  background: #fff5d3;
-  border: 1px solid #7a6131;
-  display: block;
-  height: 22px;
-  position: relative;
-  width: 16px;
-}
-
-.version-brand-mark span::after {
-  background: #c99543;
-  box-shadow: 0 4px #c99543, 0 8px #c99543;
-  content: "";
-  height: 2px;
-  left: 3px;
-  position: absolute;
-  top: 5px;
-  width: 8px;
-}
-
-.version-brand strong {
-  color: #edf7ef;
-  display: block;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 15px;
-  letter-spacing: -0.04em;
-}
-
-.version-brand strong span {
-  color: #e09c83;
-}
-
-.version-brand small {
-  color: #86a99a;
-  display: block;
-  font-size: 8px;
-  margin-top: 2px;
-}
-
-.version-navigation {
-  border-top: 1px solid rgba(183, 218, 200, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 38px;
-  padding-top: 20px;
-}
-
-.version-navigation button,
-.sidebar-bottom > button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  color: #a9c5b8;
-  display: flex;
-  font-size: 10px;
-  gap: 11px;
-  padding: 11px 12px;
-  text-align: left;
-  transition: 0.2s ease;
-  width: 100%;
-}
-
-.version-navigation button:hover,
-.version-navigation button.active {
-  background: rgba(218, 239, 224, 0.17);
-  color: white;
-}
-
-.version-navigation button.active {
-  box-shadow: inset 3px 0 #e7c36e;
-}
-
-.version-navigation button b {
-  background: #d28c70;
-  border-radius: 10px;
-  color: white;
-  font-size: 8px;
-  font-weight: 500;
-  margin-left: auto;
-  padding: 3px 6px;
-}
-
-.sidebar-bottom {
-  margin-top: auto;
-}
-
-.sidebar-bottom > button {
-  font-size: 9px;
-  padding: 9px 12px;
-}
-
-.sidebar-bottom > button:last-of-type {
-  color: #f1c57e;
-}
-
-.sidebar-user {
-  align-items: center;
-  border-top: 1px solid rgba(183, 218, 200, 0.15);
-  display: flex;
-  gap: 9px;
-  margin-top: 14px;
-  padding: 17px 5px 0;
-}
-
-.sidebar-avatar,
-.mobile-avatar,
-.header-avatar {
-  align-items: center;
-  background: #86b79b;
-  border: 2px solid #c0dfc8;
-  border-radius: 50%;
-  color: #153c33;
-  display: flex;
-  font-size: 9px;
-  height: 27px;
-  justify-content: center;
-  width: 27px;
-}
-
-.sidebar-user div {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.sidebar-user strong {
-  color: #e8f3eb;
-  font-size: 10px;
-}
-
-.sidebar-user small {
-  color: #80a493;
-  font-size: 8px;
-}
-
-.sidebar-user > .version-icon {
-  color: #7fa496;
-}
-
-/* Header */
-
-.version-content {
-  min-width: 0;
-}
+   The page opens on the document it is showing history for, so this bar has
+   to read as the subject of the page rather than as more chrome. It gets the
+   project's gold accent, a serif title at display size, and a live-status
+   line; the deep-green ground separates it from the shared header directly
+   above, which is pale.
+   ========================================================================== */
 
 .version-header {
   align-items: center;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(circle at 88% -40%, rgba(216, 165, 60, 0.22), transparent 55%),
+    linear-gradient(135deg, var(--deep-green) 0%, var(--panel-green) 100%);
+  border-bottom: 3px solid #d8a53c;
   display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
   justify-content: space-between;
-  min-height: 83px;
-  padding: 0 43px;
+  min-height: 104px;
+  padding: 22px 43px;
 }
 
 .version-file {
   align-items: center;
   display: flex;
-  gap: 12px;
+  gap: 15px;
+  min-width: 0;
 }
 
 .file-preview-icon {
   align-items: center;
-  background: #e5f0e5;
-  border: 1px solid #cbe3ce;
-  border-radius: 6px;
-  color: #609478;
+  background: linear-gradient(160deg, #f0cb76, #d8a53c);
+  border: 1px solid #eddaae;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(9, 32, 25, 0.32);
+  color: #3d2f12;
   display: flex;
-  height: 36px;
+  flex: 0 0 auto;
+  height: 46px;
   justify-content: center;
-  width: 36px;
+  width: 46px;
 }
 
+/* The "FYP / RESEARCH PAPER" kicker. */
 .version-file > div > span {
-  color: #ad7767;
+  color: #eecb84;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .version-file h1 {
-  color: var(--ink);
+  color: #fdfaf1;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 17px;
+  font-size: clamp(22px, 3vw, 30px);
   letter-spacing: -0.035em;
-  margin: 4px 0 0;
+  line-height: 1.1;
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.version-file-meta {
+  align-items: center;
+  color: #a9c8b8;
+  display: flex;
+  font-size: 12px;
+  gap: 7px;
+  margin: 8px 0 0;
+}
+
+.version-live-dot {
+  background: #9fd56c;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(159, 213, 108, 0.22);
+  display: inline-block;
+  height: 7px;
+  width: 7px;
 }
 
 .header-actions {
@@ -288,24 +138,24 @@ button:disabled {
   gap: 18px;
 }
 
-.header-actions > button:first-child {
+.version-open-editor {
   align-items: center;
-  background: transparent;
-  border: 0;
-  color: #72877d;
+  background: #d8a53c;
+  border: 1px solid #eddaae;
+  border-radius: 8px;
+  color: #21180a;
   display: flex;
-  font-size: 10px;
-  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 8px;
+  padding: 11px 18px;
+  transition: 0.18s ease;
 }
 
-.header-actions > button:first-child:hover {
-  color: var(--ink);
-}
-
-.header-avatar {
-  background: var(--deep-green);
-  border-color: #739b88;
-  color: white;
+.version-open-editor:hover {
+  background: #b67d18;
+  color: #fff8e6;
+  transform: translateY(-1px);
 }
 
 /* Page heading */
@@ -325,7 +175,7 @@ button:disabled {
 .breadcrumb {
   color: #9aaba1;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.02em;
   margin-bottom: 13px;
 }
@@ -346,7 +196,7 @@ button:disabled {
 
 .page-heading p {
   color: #81958a;
-  font-size: 11px;
+  font-size: 14px;
   margin: 0;
 }
 
@@ -367,13 +217,13 @@ button:disabled {
   color: var(--ink);
   display: block;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 19px;
+  font-size: 24px;
 }
 
 .heading-stats span {
   color: #8ea197;
   display: block;
-  font-size: 8px;
+  font-size: 11px;
   margin-top: 3px;
 }
 
@@ -402,7 +252,7 @@ button:disabled {
   border-radius: 5px;
   color: #86988d;
   display: flex;
-  font-size: 10px;
+  font-size: 13px;
   gap: 5px;
   padding: 9px 11px;
 }
@@ -421,7 +271,7 @@ button:disabled {
   background: #e5c277;
   border-radius: 10px;
   color: #5f5130;
-  font-size: 8px;
+  font-size: 11px;
   padding: 2px 5px;
 }
 
@@ -447,7 +297,7 @@ button:disabled {
   background: transparent;
   border: 0;
   color: var(--ink);
-  font-size: 10px;
+  font-size: 13px;
   min-width: 0;
   outline: 0;
   width: 100%;
@@ -465,7 +315,7 @@ button:disabled {
   border-radius: 5px;
   color: #6c8779;
   display: flex;
-  font-size: 10px;
+  font-size: 13px;
   gap: 6px;
   padding: 8px 10px;
 }
@@ -500,14 +350,14 @@ button:disabled {
 .section-eyebrow {
   color: #b57968;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
 .timeline-heading h3 {
   color: var(--ink);
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 20px;
+  font-size: 23px;
   letter-spacing: -0.035em;
   margin: 7px 0 0;
 }
@@ -515,7 +365,7 @@ button:disabled {
 .timeline-heading h3 span {
   color: #9aaa9f;
   font-family: "DM Sans", Arial, sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 400;
   margin-left: 8px;
 }
@@ -527,7 +377,7 @@ button:disabled {
   border-radius: 5px;
   color: #7b6334;
   display: flex;
-  font-size: 10px;
+  font-size: 13px;
   gap: 6px;
   padding: 9px 12px;
 }
@@ -623,19 +473,19 @@ button:disabled {
 .version-code {
   color: var(--ink);
   font-family: "DM Mono", monospace;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
 }
 
 .version-title h3 {
   color: var(--ink);
-  font-size: 13px;
+  font-size: 15px;
   margin: 0;
 }
 
 .version-badge {
   border-radius: 10px;
-  font-size: 8px;
+  font-size: 11px;
   padding: 4px 8px;
 }
 
@@ -657,13 +507,13 @@ button:disabled {
 .version-card-top time {
   color: #83968c;
   font-family: "DM Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .version-description {
   color: #769287;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.5;
   margin: 8px 0 14px;
 }
@@ -691,7 +541,7 @@ button:disabled {
   border-radius: 10px;
   color: #77802d;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 11px;
   padding: 4px 8px;
 }
 
@@ -713,7 +563,7 @@ button:disabled {
   border-radius: 4px;
   color: #478967;
   display: flex;
-  font-size: 9px;
+  font-size: 12px;
   gap: 5px;
   padding: 6px 10px;
 }
@@ -726,7 +576,7 @@ button:disabled {
   align-items: center;
   color: #849b90;
   display: flex;
-  font-size: 9px;
+  font-size: 12px;
   gap: 5px;
   margin-right: 4px;
 }
@@ -759,12 +609,12 @@ button:disabled {
 .empty-history h3 {
   color: var(--ink);
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 17px;
+  font-size: 21px;
   margin: 12px 0 5px;
 }
 
 .empty-history p {
-  font-size: 10px;
+  font-size: 13px;
   margin: 0;
 }
 
@@ -775,7 +625,7 @@ button:disabled {
   border-top: 1px solid #d7e1d8;
   color: #8b9e93;
   display: flex;
-  font-size: 9px;
+  font-size: 12px;
   gap: 7px;
   margin-top: 25px;
   padding-top: 18px;
@@ -789,7 +639,7 @@ button:disabled {
   background: transparent;
   border: 0;
   color: #ba806a;
-  font-size: 9px;
+  font-size: 12px;
   margin-left: auto;
 }
 
@@ -836,13 +686,13 @@ button:disabled {
 .modal-kicker {
   color: #e1bb6d;
   font-family: "DM Mono", monospace;
-  font-size: 8px;
+  font-size: 11px;
   letter-spacing: 0.1em;
 }
 
 .modal-header h2 {
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 22px;
+  font-size: 27px;
   letter-spacing: -0.04em;
   margin: 8px 0 4px;
 }
@@ -850,7 +700,7 @@ button:disabled {
 .modal-header p {
   color: #8eafa0;
   font-family: "DM Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   margin: 0;
 }
 
@@ -866,14 +716,14 @@ button:disabled {
 .preview-paper-label {
   color: #a1aea4;
   font-family: "DM Mono", monospace;
-  font-size: 7px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
 .preview-paper h1 {
   color: var(--ink);
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 22px;
+  font-size: 27px;
   margin: 22px 0 14px;
 }
 
@@ -898,7 +748,7 @@ button:disabled {
   border-radius: 3px;
   color: #6f7046;
   font-family: Georgia, serif;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.5;
   margin: 16px 0;
   padding: 8px 10px;
@@ -916,7 +766,7 @@ button:disabled {
   align-items: center;
   color: #84978c;
   display: flex;
-  font-size: 9px;
+  font-size: 12px;
   gap: 5px;
 }
 
@@ -929,7 +779,7 @@ button:disabled {
 .primary-button {
   border: 0;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: 13px;
   padding: 8px 11px;
 }
 
@@ -954,7 +804,7 @@ button:disabled {
   box-shadow: 0 12px 30px rgba(19, 55, 43, 0.2);
   color: white;
   display: flex;
-  font-size: 11px;
+  font-size: 14px;
   gap: 8px;
   padding: 10px 13px;
   position: fixed;
@@ -973,22 +823,10 @@ button:disabled {
   width: 19px;
 }
 
-/* Mobile */
-
-.mobile-topbar {
-  display: none;
-}
+/* Mobile. The sidebar, top bar and drawer are the shared chrome's job now;
+   what is left here is only how this page's own content reflows. */
 
 @media (max-width: 1100px) {
-  .version-layout {
-    grid-template-columns: 210px minmax(0, 1fr);
-  }
-
-  .version-sidebar {
-    padding-left: 11px;
-    padding-right: 11px;
-  }
-
   .version-header {
     padding-left: 28px;
     padding-right: 28px;
@@ -1006,61 +844,6 @@ button:disabled {
 }
 
 @media (max-width: 800px) {
-  .version-layout {
-    display: block;
-  }
-
-  .version-sidebar {
-    bottom: 0;
-    box-shadow: 12px 0 35px rgba(15, 51, 41, 0.22);
-    left: 0;
-    max-width: 260px;
-    position: fixed;
-    top: 0;
-    transform: translateX(-105%);
-    transition: transform 0.25s ease;
-    width: 82%;
-    z-index: 40;
-  }
-
-  .version-layout.mobile-open .version-sidebar {
-    transform: translateX(0);
-  }
-
-  .mobile-topbar {
-    align-items: center;
-    background: var(--deep-green);
-    color: white;
-    display: flex;
-    height: 58px;
-    justify-content: space-between;
-    padding: 0 15px;
-  }
-
-  .mobile-topbar .version-brand small {
-    display: none;
-  }
-
-  .mobile-menu-button {
-    background: transparent;
-    border: 0;
-    color: white;
-    padding: 5px;
-  }
-
-  .mobile-avatar {
-    background: #85b69a;
-    border-color: #bbdbc4;
-  }
-
-  .mobile-overlay {
-    background: rgba(12, 39, 32, 0.42);
-    border: 0;
-    inset: 0;
-    position: fixed;
-    z-index: 30;
-  }
-
   .version-header {
     min-height: 73px;
     padding: 0 18px;
@@ -1147,15 +930,15 @@ button:disabled {
 
 @media (max-width: 520px) {
   .version-file h1 {
-    font-size: 14px;
-  }
-
-  .heading-stats strong {
     font-size: 16px;
   }
 
+  .heading-stats strong {
+    font-size: 18px;
+  }
+
   .heading-stats span {
-    font-size: 7px;
+    font-size: 11px;
   }
 
   .timeline-heading {
@@ -1182,15 +965,15 @@ button:disabled {
   }
 
   .version-card-top time {
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .version-title h3 {
-    font-size: 12px;
+    font-size: 15px;
   }
 
   .version-description {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .version-author {

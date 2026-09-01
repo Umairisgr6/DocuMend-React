@@ -1,17 +1,14 @@
 import React, { useMemo, useState } from "react";
 import "./version.css";
+import {
+  MobileDrawer,
+  MobileTopbar,
+  Sidebar,
+  WorkspaceHeader,
+  WorkspaceModal,
+} from "../components/WorkspaceChrome";
+import { workspaceRoutes } from "../components/workspace-nav";
 import { navigate } from "../router";
-
-// This page has its own sidebar rather than the shared WorkspaceChrome one,
-// and labels it slightly differently ("My Documents", not "My documents"),
-// so it needs its own label -> route map. Labels absent from here have no
-// page yet and only highlight.
-const sidebarRoutes = {
-  Dashboard: "/dashboard",
-  "My Documents": "/documents",
-  Editor: "/editor",
-  Subscription: "/subscription",
-};
 const versions = [
   {
     id: "v42",
@@ -199,70 +196,6 @@ function Icon({ name, size = 17 }) {
     </svg>
   );
 }
-function Brand() {
-  return (
-    <div className="version-brand">
-      <div className="version-brand-mark">
-        <span />
-      </div>
-      <div>
-        <strong>
-          Docu<span>Mend</span>
-        </strong>
-        <small>Intelligent document workspace</small>
-      </div>
-    </div>
-  );
-}
-function Sidebar({ activePage, onNavigate }) {
-  const links = [
-    ["Dashboard", "home"],
-    ["My Documents", "file"],
-    ["Editor", "edit"],
-    ["Version History", "history"],
-    ["Subscription", "card"],
-    ["Features", "star"],
-    ["Privacy Mode", "lock"],
-    ["Settings", "settings"],
-  ];
-  return (
-    <aside className="version-sidebar">
-      <Brand />
-      <nav className="version-navigation">
-        {links.map(([label, icon]) => (
-          <button
-            className={activePage === label ? "active" : ""}
-            key={label}
-            onClick={() => onNavigate(label)}
-            type="button"
-          >
-            <Icon name={icon} size={15} />
-            <span>{label}</span>
-            {label === "Version History" && <b>7</b>}
-          </button>
-        ))}
-      </nav>
-      <div className="sidebar-bottom">
-        <button type="button">
-          <Icon name="menu" size={14} />
-          Help & Guide
-        </button>
-        <button type="button">
-          <Icon name="logout" size={14} />
-          Logout
-        </button>
-        <div className="sidebar-user">
-          <span className="sidebar-avatar">LS</span>
-          <div>
-            <strong>Mahnoor</strong>
-            <small>Private workspace</small>
-          </div>
-          <Icon name="more" size={14} />
-        </div>
-      </div>
-    </aside>
-  );
-}
 function VersionCard({
   version,
   selected,
@@ -395,17 +328,26 @@ function PreviewModal({ version, onClose, onRestore }) {
   );
 }
 export default function VersionHistory() {
-  const [activePage, setActivePage] = useState("Version History");
+  // Shared workspace chrome state, matching the other signed-in pages.
+  const [activePage, setActivePage] = useState("Version history");
+  const [darkMode, setDarkMode] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const [workspaceSearch, setWorkspaceSearch] = useState("");
+  const [modal, setModal] = useState(null);
 
   // Sidebar clicks leave the page when the label has a route; otherwise they
-  // just move the highlight, as before.
+  // just move the highlight and say so.
   const handleNavigate = (label) => {
-    const route = sidebarRoutes[label];
-    if (route) {
+    const route = workspaceRoutes[label];
+    if (route && label !== "Version history") {
       navigate(route);
       return;
     }
     setActivePage(label);
+    if (label !== "Version history") notify(`${label} view selected`);
+    setMobileMenu(false);
   };
 
   const [filter, setFilter] = useState("All versions");
@@ -413,7 +355,6 @@ export default function VersionHistory() {
   const [selectedVersions, setSelectedVersions] = useState([]);
   const [previewVersion, setPreviewVersion] = useState(null);
   const [toast, setToast] = useState("");
-  const [mobileMenu, setMobileMenu] = useState(false);
   const filteredVersions = useMemo(() => {
     return versions.filter((version) => {
       const matchesFilter =
@@ -456,50 +397,69 @@ export default function VersionHistory() {
     notify(`Comparing ${selectedVersions[0]} with ${selectedVersions[1]}`);
   };
   return (
-    <main className="version-app">
-      <div className="mobile-topbar">
-        <button
-          aria-label="Open navigation"
-          className="mobile-menu-button"
-          onClick={() => setMobileMenu(true)}
-          type="button"
-        >
-          <Icon name="menu" />
-        </button>
-        <Brand />
-        <span className="mobile-avatar">LS</span>
-      </div>
-      <div className={`version-layout ${mobileMenu ? "mobile-open" : ""}`}>
-        <Sidebar activePage={activePage} onNavigate={handleNavigate} />
-        {mobileMenu && (
-          <button
-            aria-label="Close navigation"
-            className="mobile-overlay"
-            onClick={() => setMobileMenu(false)}
-            type="button"
-          />
-        )}
-        <section className="version-content">
+    <div className={`dash-shell ${darkMode ? "dash-dark" : ""}`}>
+      <MobileTopbar
+        onMenu={() => setMobileMenu(true)}
+        onThemeToggle={() => setDarkMode((current) => !current)}
+        darkMode={darkMode}
+      />
+
+      <Sidebar
+        activeNav={activePage}
+        onNavigate={handleNavigate}
+        privacyMode={privacyMode}
+        onPrivacyToggle={() => {
+          setPrivacyMode((current) => !current);
+          notify(`Privacy mode ${privacyMode ? "paused" : "enabled"}`);
+        }}
+        darkMode={darkMode}
+        onThemeToggle={() => setDarkMode((current) => !current)}
+        onLogout={() => setModal("logout")}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
+      />
+
+      <MobileDrawer
+        open={mobileMenu}
+        onClose={() => setMobileMenu(false)}
+        activeNav={activePage}
+        onNavigate={handleNavigate}
+        onPrivacyToggle={() => setPrivacyMode((current) => !current)}
+        onLogout={() => setModal("logout")}
+      />
+
+      <main className={`dash-main ${sidebarCollapsed ? "is-wide" : ""}`}>
+        <WorkspaceHeader
+          search={workspaceSearch}
+          onSearchChange={setWorkspaceSearch}
+          onAnnounce={notify}
+        />
+
+        <section className="version-page">
+          {/* Document banner. The profile chip that used to sit on the right
+              is gone -- the shared WorkspaceHeader above already shows it. */}
           <header className="version-header">
             <div className="version-file">
               <span className="file-preview-icon">
-                <Icon name="file" size={18} />
+                <Icon name="file" size={22} />
               </span>
               <div>
                 <span>FYP / RESEARCH PAPER</span>
                 <h1>FYP_Phase2_Report.docx</h1>
+                <p className="version-file-meta">
+                  <span className="version-live-dot" />
+                  Editing v42 &middot; saved 2 minutes ago &middot; 21 versions
+                </p>
               </div>
             </div>
             <div className="header-actions">
               <button
-                onClick={() => notify("Editor opened")}
+                className="version-open-editor"
+                onClick={() => navigate("/editor")}
                 type="button"
               >
+                <Icon name="edit" size={15} />
                 Open editor
-                <Icon name="edit" size={14} />
-              </button>
-              <button className="header-avatar" type="button">
-                LS
               </button>
             </div>
           </header>
@@ -625,7 +585,8 @@ export default function VersionHistory() {
             </footer>
           </div>
         </section>
-      </div>
+      </main>
+
       {previewVersion && (
         <PreviewModal
           onClose={() => setPreviewVersion(null)}
@@ -633,6 +594,18 @@ export default function VersionHistory() {
           version={previewVersion}
         />
       )}
+
+      <WorkspaceModal
+        mode={modal}
+        initialValue=""
+        onClose={() => setModal(null)}
+        onSubmit={() => setModal(null)}
+        onLogout={() => {
+          setModal(null);
+          navigate("/login");
+        }}
+      />
+
       {toast && (
         <div className="version-toast">
           <span>
@@ -641,6 +614,6 @@ export default function VersionHistory() {
           {toast}
         </div>
       )}
-    </main>
+    </div>
   );
 }
