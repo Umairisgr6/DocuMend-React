@@ -468,7 +468,7 @@
  *
  * Ported from the Replit prototype (TypeScript + Tailwind + shadcn).
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './dashboard.css';
 import {
   ArrowUpRight,
@@ -526,7 +526,12 @@ function QuickAction({ icon: Icon, title, description, tone, onClick, onDrop }) 
       type="button"
       onClick={onClick}
       onDrop={onDrop}
-      onDragOver={(event) => event.preventDefault()}
+      // Only the tile that actually accepts a drop may cancel dragover.
+      // Cancelling it on all four told the browser every tile was a drop
+      // target, but three of them had no onDrop -- so a file dropped there
+      // fell through to the browser's default, which navigates the tab to
+      // that file and destroys every bit of unsaved state in the app.
+      onDragOver={onDrop ? (event) => event.preventDefault() : undefined}
       className={`dash-quick dash-quick-${tone}`}
     >
       <span className="dash-quick-icon"><Icon size={17} strokeWidth={1.8} /></span>
@@ -622,7 +627,6 @@ function Dashboard() {
   const [draftValue, setDraftValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState('');
-  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -789,19 +793,16 @@ function Dashboard() {
 
               <div className="dash-quick-row">
                 <QuickAction icon={Plus} title="Create document" description="Begin with a blank page" tone="gold" onClick={openNewDocument} />
-                <QuickAction icon={Upload} title="Upload / drop" description="Bring in a document" tone="green" onClick={() => fileInputRef.current?.click()} onDrop={handleDrop} />
+                {/* Clicking opens the full import screen; dropping a file
+                    directly on the tile still imports it here. */}
+                <QuickAction icon={Upload} title="Upload / drop" description="Bring in a document" tone="green" onClick={() => navigate('/upload')} onDrop={handleDrop} />
                 <QuickAction icon={FolderPlus} title="Create folder" description="Keep thoughts together" tone="plum" onClick={() => { setDraftValue(''); setModal('folder'); }} />
                 <QuickAction icon={Pencil} title="Edit document" description="Continue where you left off" tone="coral" onClick={() => openEditDocument()} />
               </div>
 
-              {/* Hidden picker driven by the "Upload / drop" tile. */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                hidden
-                accept=".doc,.docx,.pdf,.txt,.rtf"
-                onChange={(event) => handleFiles(event.target.files)}
-              />
+              {/* The file picker moved to the import screen at /upload, which
+                  the tile now opens. Dropping a file on the tile still works
+                  and is handled by handleDrop. */}
 
               <div className="dash-desk-foot">
                 <span><Cloud size={14} /> Synced just now</span>
