@@ -1,0 +1,474 @@
+/**
+ * create-folder.css — the folder setup screen.
+ *
+ * Adapted from the prototype's Tailwind utilities. Its oklch palette and
+ * @utility blocks are not portable here (styles-utilities.css is a frozen
+ * Tailwind snapshot, not a live build), so the look is rebuilt from the
+ * shared --dash-* tokens: the page follows the workspace theme and inherits
+ * dark mode from .dash-shell.
+ *
+ * The colour swatches reuse .dash-glyph-* from workspace-chrome.css rather
+ * than defining their own, so a folder tag matches the document chip of the
+ * same name.
+ *
+ * All selectors are prefixed `folder-`.
+ */
+
+.folder-page {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 24px 56px;
+}
+
+/* Faint grid, echoing the prototype's etched backdrop. */
+.folder-page::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--dash-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--dash-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Card
+   ========================================================================== */
+
+/* A 1px gradient hairline. Done as a padded wrapper rather than a border so
+   the colour can fade out around the corners. */
+.folder-frame {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 100%);
+  padding: 1px;
+  border-radius: 26px;
+  background: linear-gradient(
+    150deg,
+    rgba(216, 165, 60, 0.55),
+    transparent 45%,
+    rgba(124, 170, 145, 0.4)
+  );
+  animation: folder-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.folder-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 25px;
+  background: linear-gradient(160deg, var(--dash-card), var(--dash-bg));
+  box-shadow: 0 32px 80px -24px rgba(14, 38, 30, 0.45);
+}
+
+/* Warm glow bleeding in from the top-right corner. */
+.folder-bloom {
+  position: absolute;
+  top: -110px;
+  right: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(216, 165, 60, 0.5), transparent 70%);
+  filter: blur(42px);
+  pointer-events: none;
+}
+
+@keyframes folder-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folder-frame {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Card header
+   ========================================================================== */
+
+.folder-card-head {
+  display: flex;
+  position: relative;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--dash-line);
+}
+
+.folder-head-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  margin-top: 2px;
+  border: 1px solid var(--dash-line);
+  border-radius: 15px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-gold-strong);
+  place-items: center;
+}
+
+.folder-head-copy {
+  min-width: 0;
+}
+
+.folder-eyebrow {
+  display: block;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.folder-card-head h1 {
+  margin: 6px 0 0;
+  color: var(--dash-ink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(26px, 3.5vw, 32px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.folder-head-sub {
+  margin: 6px 0 0;
+  color: var(--dash-ink-soft);
+  font-size: 13px;
+}
+
+.folder-close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--dash-ink-muted);
+  place-items: center;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.folder-close:hover {
+  background: var(--dash-panel-alt);
+  color: var(--dash-ink);
+}
+
+/* ==========================================================================
+   Body
+   ========================================================================== */
+
+.folder-card-body {
+  display: grid;
+  position: relative;
+  gap: 28px;
+  padding: 28px 30px;
+}
+
+.folder-field > .folder-eyebrow {
+  margin-bottom: 10px;
+}
+
+/* Name input */
+
+.folder-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: 13px;
+  background: var(--dash-bg);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.folder-input:focus-within {
+  border-color: var(--dash-gold);
+  box-shadow: 0 0 0 3px rgba(216, 165, 60, 0.18);
+}
+
+.folder-input input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--dash-ink);
+  font: 400 15px inherit;
+  outline: none;
+}
+
+.folder-input input::placeholder {
+  color: var(--dash-ink-muted);
+}
+
+.folder-count {
+  flex: 0 0 auto;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+
+/* The tinted dot borrows .dash-glyph-* for its colour; these rules only give
+   it a shape. */
+.folder-dot {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+
+/* Colour swatches */
+
+.folder-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.folder-swatch {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.folder-swatch:hover {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.folder-swatch.is-active {
+  box-shadow: 0 0 0 2px var(--dash-card), 0 0 0 4px var(--dash-ink);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.folder-swatch-name {
+  margin-left: 4px;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+}
+
+/* Parent picker */
+
+.folder-parents {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.folder-parent {
+  display: grid;
+  padding: 16px 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 17px;
+  background: var(--dash-panel-alt);
+  color: var(--dash-ink-muted);
+  justify-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.folder-parent:hover {
+  border-color: var(--dash-line-soft);
+  transform: translateY(-2px);
+}
+
+.folder-parent.is-active {
+  border-color: var(--dash-gold);
+  background: var(--dash-sand);
+  box-shadow: 0 12px 28px -12px rgba(216, 165, 60, 0.65);
+  color: var(--dash-gold-strong);
+}
+
+.folder-parent-name {
+  margin-top: 9px;
+  color: var(--dash-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.folder-parent-meta {
+  margin-top: 3px;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Preview strip */
+
+.folder-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: 17px;
+  background: var(--dash-panel-alt);
+}
+
+.folder-preview p {
+  overflow: hidden;
+  min-width: 0;
+  margin: 0;
+  color: var(--dash-ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-preview p span {
+  color: var(--dash-ink-muted);
+}
+
+.folder-preview > svg {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--dash-ink-muted);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.folder-card-foot {
+  display: flex;
+  position: relative;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 30px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.folder-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--dash-gold), var(--dash-gold-soft));
+  box-shadow: 0 12px 32px -10px rgba(216, 165, 60, 0.75);
+  color: #21180a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.folder-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.folder-primary:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.folder-quiet {
+  padding: 12px 20px;
+  border: 1px solid var(--dash-line);
+  border-radius: 13px;
+  background: transparent;
+  color: var(--dash-ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+.folder-quiet:hover {
+  background: var(--dash-panel-alt);
+}
+
+.folder-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 auto;
+  color: var(--dash-ink-muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.folder-saved svg {
+  color: var(--dash-gold-strong);
+}
+
+.folder-tip {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  align-items: center;
+  gap: 9px;
+  margin: 22px 0 0;
+  color: var(--dash-ink-soft);
+  font-size: 12px;
+}
+
+.folder-tip svg {
+  color: var(--dash-gold-strong);
+}
+
+.folder-toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 60;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--dash-forest-deep);
+  box-shadow: 0 18px 40px rgba(12, 34, 27, 0.32);
+  color: #eef3e7;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .folder-page {
+    padding: 26px 16px 40px;
+  }
+
+  .folder-card-head,
+  .folder-card-body,
+  .folder-card-foot {
+    padding-inline: 20px;
+  }
+
+  .folder-saved {
+    width: 100%;
+    margin-left: 0;
+  }
+}
