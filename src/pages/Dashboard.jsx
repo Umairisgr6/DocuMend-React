@@ -221,7 +221,7 @@ function Dashboard() {
     const target = documents.find((doc) => doc.id === targetId);
     if (!target) return;
     setSelectedId(target.id);
-    navigate('/editor');
+    navigate('/Edit');
   };
 
   const submitModal = (value) => {

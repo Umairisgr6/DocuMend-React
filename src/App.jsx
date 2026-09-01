@@ -30,6 +30,7 @@ import Storage from './pages/storage';
 import Share from './pages/Share';
 import CreateDocument from './pages/CreateDocument'; // <-- Import karein
 import CreateFolder from './pages/CreateFolder';
+import Edit from './pages/Edit';
 
 // Custom lightweight router hook
 import { usePathname } from './router';
@@ -57,6 +58,7 @@ function Router() {
   if (pathname === '/help' || pathname === '/help-and-guide') return <Help />;
   if (pathname === '/storage') return <Storage />;
   if (pathname === '/share' || pathname === '/share-document') return <Share />;
+  if (pathname === '/edit' || pathname === '/select-document') return <Edit />;
 
   // Subscription & Pricing (both aliases map to the same page)
   if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;

@@ -1,0 +1,666 @@
+/* ==========================================================================
+   DOCUMEND DOCUMENT SELECTOR / EDIT STUDIO STYLING (LIGHT & DARK FOREST)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. MAIN AREA & BACKGROUND CANVAS
+   -------------------------------------------------------------------------- */
+.edit-main-area {
+  min-height: 100vh;
+  position: relative;
+  background-color: #f6f4ee;
+  color: #17362d;
+  padding: 0;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.edit-container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 36px 48px 36px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ambient Radial Glows */
+.edit-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(110px);
+  z-index: 1;
+}
+
+.edit-glow-1 {
+  width: 520px;
+  height: 520px;
+  top: -60px;
+  right: 2%;
+  background: radial-gradient(circle, rgba(223, 139, 41, 0.12), transparent 70%);
+}
+
+.edit-glow-2 {
+  width: 560px;
+  height: 560px;
+  bottom: 12%;
+  left: -40px;
+  background: radial-gradient(circle, rgba(32, 179, 119, 0.1), transparent 70%);
+}
+
+/* --------------------------------------------------------------------------
+   2. BREADCRUMBS & HERO BANNER
+   -------------------------------------------------------------------------- */
+.edit-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #557266;
+  margin-bottom: 16px;
+}
+
+.edit-back-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #557266;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.edit-back-crumb:hover {
+  color: #df8b29;
+  background: rgba(223, 139, 41, 0.08);
+}
+
+.edit-crumb-sep {
+  opacity: 0.5;
+}
+
+.edit-crumb-active {
+  font-weight: 700;
+  color: #17362d;
+}
+
+.edit-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.edit-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #df8b29;
+  background: #fff4e5;
+  border: 1px solid rgba(223, 139, 41, 0.25);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  margin-bottom: 10px;
+}
+
+.edit-hero-copy h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 32px;
+  line-height: 1.15;
+  color: #112620;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.edit-hero-copy p {
+  color: #557266;
+  font-size: 14.5px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.edit-new-doc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #df8b29;
+  color: #ffffff;
+  border: none;
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(223, 139, 41, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.edit-new-doc-btn:hover {
+  background: #c8791c;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   3. SEARCH CAPSULE & CATEGORY PILLS
+   -------------------------------------------------------------------------- */
+.edit-toolbar-box {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-search-capsule {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fdfbf7;
+  border: 1.5px solid #dcd5c9;
+  border-radius: 12px;
+  padding: 4px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.edit-search-capsule:focus-within {
+  border-color: #df8b29;
+  box-shadow: 0 0 0 3px rgba(223, 139, 41, 0.15);
+}
+
+.edit-search-icon {
+  color: #7b9489;
+  margin-right: 10px;
+}
+
+.edit-search-capsule input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #17362d;
+  font-weight: 500;
+}
+
+.edit-search-capsule input::placeholder {
+  color: #8da89b;
+}
+
+.edit-clear-search {
+  background: transparent;
+  border: none;
+  color: #7b9489;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.edit-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.edit-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f7f4ee;
+  border: 1.5px solid #e2dad0;
+  color: #4b665b;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.edit-filter-pill:hover {
+  border-color: #df8b29;
+  color: #df8b29;
+}
+
+.edit-filter-pill.is-active {
+  background: #df8b29;
+  border-color: #df8b29;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(223, 139, 41, 0.28);
+}
+
+.edit-pill-count {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 6px;
+  border-radius: 9999px;
+}
+
+.edit-filter-pill.is-active .edit-pill-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   4. DOCUMENT CARDS GRID
+   -------------------------------------------------------------------------- */
+.edit-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 980px) {
+  .edit-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .edit-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.edit-doc-card {
+  position: relative;
+  background: #ffffff;
+  border: 1.5px solid #e5dfd5;
+  border-radius: 18px;
+  padding: 22px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 170px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.edit-doc-card:hover {
+  transform: translateY(-3px);
+  border-color: #df8b29;
+  box-shadow: 0 10px 24px rgba(223, 139, 41, 0.08);
+}
+
+.edit-doc-card.is-selected {
+  background: #fffdf9;
+  border-color: #df8b29 !important;
+  box-shadow: 0 0 0 3px rgba(223, 139, 41, 0.22), 0 10px 28px rgba(223, 139, 41, 0.12);
+}
+
+.edit-card-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.edit-doc-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f5f2eb;
+  color: #17362d;
+  display: grid;
+  place-items: center;
+}
+
+.edit-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.edit-badge-clean { background: #eaf6f0; color: #10b981; border: 1px solid #cce8dc; }
+.edit-badge-issues { background: #fff4e5; color: #df8b29; border: 1px solid #fed7aa; }
+.edit-badge-conflict { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+.edit-badge-gap { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+
+.edit-selected-checkmark {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #df8b29;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+}
+
+.edit-card-body h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #112620;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-card-detail {
+  font-size: 12px;
+  color: #648074;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7b9489;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dashed #e8e2d7;
+}
+
+.edit-meta-dot {
+  opacity: 0.6;
+}
+
+/* Empty State */
+.edit-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  background: #ffffff;
+  border: 1px dashed #dcd5c9;
+  border-radius: 18px;
+}
+
+.edit-empty-icon {
+  color: #a4beaf;
+  margin-bottom: 12px;
+}
+
+.edit-empty-state h3 {
+  font-size: 16px;
+  color: #17362d;
+  margin: 0 0 6px 0;
+}
+
+.edit-empty-state p {
+  font-size: 13.5px;
+  color: #648074;
+  margin: 0 0 16px 0;
+}
+
+.edit-reset-btn {
+  background: #17362d;
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   5. INTEGRATED STATIC BOTTOM ACTION CARD (ZERO OVERLAP)
+   -------------------------------------------------------------------------- */
+.edit-action-card-footer {
+  margin-top: 32px;
+  background: #ffffff;
+  border: 1.5px solid #df8b29;
+  border-radius: 18px;
+  padding: 16px 24px;
+  box-shadow: 0 10px 30px rgba(223, 139, 41, 0.1);
+  transition: all 0.25s ease;
+}
+
+.edit-action-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.edit-action-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.edit-action-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #648074;
+  white-space: nowrap;
+}
+
+.edit-action-filename {
+  font-size: 15px;
+  color: #df8b29;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-action-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #f5f2eb;
+  color: #17362d;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.edit-action-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.edit-action-cancel-btn {
+  background: #f5f2eb;
+  border: 1px solid #dcd5c9;
+  color: #17362d;
+  padding: 10px 20px;
+  border-radius: 11px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.edit-action-cancel-btn:hover {
+  background: #ebe6dc;
+}
+
+.edit-action-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #df8b29;
+  color: #ffffff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(223, 139, 41, 0.28);
+  transition: all 0.2s ease;
+}
+
+.edit-action-open-btn:hover {
+  background: #c8791c;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .edit-action-footer-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .edit-action-right {
+    justify-content: flex-end;
+  }
+}
+
+/* Toast */
+.edit-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #17362d;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 120;
+}
+
+.edit-accent-gold { color: #df8b29; }
+
+/* ==========================================================================
+   6. DARK FOREST MODE OVERRIDES (.dash-dark)
+   ========================================================================== */
+.dash-dark .edit-main-area {
+  background-color: #111a17 !important;
+  color: #e2ece6 !important;
+}
+
+.dash-dark .edit-hero-copy h1,
+.dash-dark .edit-crumb-active,
+.dash-dark .edit-empty-state h3 {
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-back-crumb,
+.dash-dark .edit-hero-copy p,
+.dash-dark .edit-empty-state p {
+  color: #8da89b !important;
+}
+
+.dash-dark .edit-toolbar-box {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .edit-search-capsule {
+  background: #121e1a !important;
+  border-color: #20352e !important;
+}
+
+.dash-dark .edit-search-capsule input {
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-filter-pill {
+  background: #172822 !important;
+  border-color: #28443b !important;
+  color: #a4beaf !important;
+}
+
+.dash-dark .edit-filter-pill:hover {
+  border-color: #df8b29 !important;
+  color: #df8b29 !important;
+}
+
+.dash-dark .edit-filter-pill.is-active {
+  background: #df8b29 !important;
+  border-color: #df8b29 !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-doc-card {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .edit-doc-card:hover {
+  border-color: #df8b29 !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dash-dark .edit-doc-card.is-selected {
+  background: #192c26 !important;
+  border-color: #df8b29 !important;
+}
+
+.dash-dark .edit-card-body h3 {
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-card-detail {
+  color: #8da89b !important;
+}
+
+.dash-dark .edit-doc-icon-badge {
+  background: #1c3029 !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-card-meta {
+  border-top-color: #243f35 !important;
+  color: #648074 !important;
+}
+
+.dash-dark .edit-action-card-footer {
+  background: #15241f !important;
+  border-color: #df8b29 !important;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dash-dark .edit-action-badge {
+  background: #1c3029 !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-action-cancel-btn {
+  background: #1c3029 !important;
+  border-color: #2b493f !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .edit-empty-state {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
