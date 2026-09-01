@@ -1,4 +1,5 @@
 import { ErrorBoundary } from './components/ErrorBoundary';
+import CreateFolder from './pages/CreateFolder';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
 import Features from './pages/Features';
@@ -34,8 +35,10 @@ function Router() {
   if (pathname === '/settings') return <Settings />;
   if (pathname === '/help' || pathname === '/help-and-guide') return <Help />;
   if (pathname === '/storage') return <Storage />;
-  // Reached from the dashboard's "Upload / drop" tile, not from the sidebar.
+  // Reached from the dashboard's quick-action tiles, not from the sidebar.
   if (pathname === '/upload') return <UploadDocument />;
+  // The folder name arrives as ?name=... from the dashboard's prompt.
+  if (pathname === '/create-folder') return <CreateFolder />;
   // Two paths for one page: the sidebar calls it Subscription, the landing
   // page links to Pricing.
   if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;
