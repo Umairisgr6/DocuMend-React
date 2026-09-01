@@ -1,4 +1,5 @@
 import { ErrorBoundary } from './components/ErrorBoundary';
+import CreateDocument from './pages/CreateDocument';
 import CreateFolder from './pages/CreateFolder';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
@@ -37,8 +38,9 @@ function Router() {
   if (pathname === '/storage') return <Storage />;
   // Reached from the dashboard's quick-action tiles, not from the sidebar.
   if (pathname === '/upload') return <UploadDocument />;
-  // The folder name arrives as ?name=... from the dashboard's prompt.
+  // Both setup screens take the name as ?name=... from the dashboard prompt.
   if (pathname === '/create-folder') return <CreateFolder />;
+  if (pathname === '/create-document') return <CreateDocument />;
   // Two paths for one page: the sidebar calls it Subscription, the landing
   // page links to Pricing.
   if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;
