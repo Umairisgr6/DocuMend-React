@@ -1,64 +1,41 @@
-/**
- * workspace-nav — the sidebar's navigation data, shared by every signed-in
- * page.
- *
- * Kept separate from WorkspaceChrome.jsx so that file exports only React
- * components (a requirement for Vite's fast refresh — mixing data exports
- * into a component file downgrades hot reloads to full page reloads).
- */
 import {
-  CircleHelp,
-  Cloud,
-  FilePenLine,
-  Files,
-  Grid2X2,
-  History,
-  House,
-  Settings,
-  ShieldCheck,
+  FileText,
+  Clock,
   Sparkles,
-  UsersRound,
+  Shield,
+  HelpCircle,
+  HardDrive,
+  Share2,
+  Cpu,
+  Sliders,
 } from 'lucide-react';
 
-// Labels that lead to a real page. A page's onNavigate checks here first and
-// falls back to a "view selected" toast for everything else.
-//
-// Keep this in step with the route table in App.jsx: a label missing from
-// here is a dead sidebar link even when its route exists. The entries below
-// are every label that currently has a page; the rest of navPrimary and all
-// of navWorkspace are still placeholders.
-export const workspaceRoutes = {
-  'Dashboard': '/dashboard',
-  'My documents': '/documents',
-  'Editor': '/editor',
-  'Version history': '/version',
-<<<<<<< Updated upstream
-  Subscription: '/subscription',
-  Features: '/features',
-=======
-  'Subscription': '/subscription',
-  'Features': '/Features',
-  'Settings': '/Settings',
-  'Help and guide':'/help',
-  Storage: '/storage', // <-- Add this entry // <-- Yeh line add karein
->>>>>>> Stashed changes
-};
-
 export const navPrimary = [
-  { label: 'Dashboard', icon: House },
-  { label: 'My documents', icon: Files },
-  { label: 'Editor', icon: FilePenLine },
-  { label: 'Version history', icon: History, badge: '3' },
+  { label: 'Dashboard', icon: FileText },
+  { label: 'My documents', icon: FileText },
+  { label: 'Editor', icon: FileText },
+  { label: 'Version history', icon: Clock, badge: '1' },
   { label: 'Subscription', icon: Sparkles },
-  { label: 'Features', icon: Grid2X2 },
 ];
 
-// "Privacy mode" is handled specially by the Sidebar: it toggles a switch
-// rather than navigating anywhere.
 export const navWorkspace = [
-  { label: 'Privacy mode', icon: ShieldCheck },
-  { label: 'Settings', icon: Settings },
-  { label: 'Help and guide', icon: CircleHelp },
-  { label: 'Storage', icon: Cloud },
-  { label: 'Shared documents', icon: UsersRound },
+  { label: 'Features', icon: Cpu },
+  { label: 'Privacy mode', icon: Shield },
+  { label: 'Settings', icon: Sliders },
+  { label: 'Help and Guide', icon: HelpCircle },
+  { label: 'Storage', icon: HardDrive },
+  { label: 'Share Document', icon: Share2 },
 ];
+
+export const workspaceRoutes = {
+  Dashboard: '/dashboard',
+  'My documents': '/documents',
+  Editor: '/editor',
+  'Version history': '/version',
+  Subscription: '/subscription',
+  Pricing: '/pricing',
+  Features: '/features',
+  Settings: '/settings',
+  'Help and Guide': '/help',
+  Storage: '/storage',
+};
