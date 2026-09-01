@@ -1,6 +1,6 @@
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Dashboard from './pages/Dashboard';
-import Editor from './pages/editor';
+import Editor from './pages/Editor';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
