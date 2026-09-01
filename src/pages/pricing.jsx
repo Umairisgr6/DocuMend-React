@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 // External stylesheet for custom layout, fonts, and animation effects
 import "./pricing.css";
+import { navigate, usePathname } from "../router";
 
 /* -------------------------------------------------------------------------- */
 /*                            PRICING PLANS DATA                              */
@@ -258,6 +259,15 @@ function PlanCard({ plan, isAnnual, onChoose }) {
 /*                           MAIN PRICING COMPONENT                           */
 /* -------------------------------------------------------------------------- */
 export default function Pricing() {
+  // This page answers to two routes: /pricing, reached from the landing page,
+  // and /subscription, reached from the workspace sidebar. "Back" has to
+  // return to whichever one the visitor actually arrived from -- sending a
+  // signed-in user to the marketing page would drop them out of the app.
+  const pathname = usePathname();
+  const cameFromWorkspace = pathname === "/subscription";
+  const backHref = cameFromWorkspace ? "/dashboard" : "/";
+  const backLabel = cameFromWorkspace ? "Back to dashboard" : "Back to DocuMend";
+
   // Billing cycle state: true for annual (discounted), false for monthly
   const [isAnnual, setIsAnnual] = useState(true);
   
@@ -296,10 +306,10 @@ export default function Pricing() {
         <button
           className="pricing-back"
           type="button"
-          onClick={() => notify("You’re still in the right place. Plans are just ahead.")}
+          onClick={() => navigate(backHref)}
         >
           <ArrowLeft size={15} />
-          Back to DocuMend
+          {backLabel}
         </button>
         <div className="pricing-wordmark" aria-label="DocuMend">
           <BrandMark />
