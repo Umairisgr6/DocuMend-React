@@ -1,5 +1,17 @@
 import React, { useMemo, useState } from "react";
 import "./version.css";
+import { navigate } from "../router";
+
+// This page has its own sidebar rather than the shared WorkspaceChrome one,
+// and labels it slightly differently ("My Documents", not "My documents"),
+// so it needs its own label -> route map. Labels absent from here have no
+// page yet and only highlight.
+const sidebarRoutes = {
+  Dashboard: "/dashboard",
+  "My Documents": "/documents",
+  Editor: "/editor",
+  Subscription: "/subscription",
+};
 const versions = [
   {
     id: "v42",
@@ -384,6 +396,18 @@ function PreviewModal({ version, onClose, onRestore }) {
 }
 export default function VersionHistory() {
   const [activePage, setActivePage] = useState("Version History");
+
+  // Sidebar clicks leave the page when the label has a route; otherwise they
+  // just move the highlight, as before.
+  const handleNavigate = (label) => {
+    const route = sidebarRoutes[label];
+    if (route) {
+      navigate(route);
+      return;
+    }
+    setActivePage(label);
+  };
+
   const [filter, setFilter] = useState("All versions");
   const [query, setQuery] = useState("");
   const [selectedVersions, setSelectedVersions] = useState([]);
@@ -446,7 +470,7 @@ export default function VersionHistory() {
         <span className="mobile-avatar">LS</span>
       </div>
       <div className={`version-layout ${mobileMenu ? "mobile-open" : ""}`}>
-        <Sidebar activePage={activePage} onNavigate={setActivePage} />
+        <Sidebar activePage={activePage} onNavigate={handleNavigate} />
         {mobileMenu && (
           <button
             aria-label="Close navigation"
