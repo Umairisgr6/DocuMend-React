@@ -1784,3 +1784,46 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ==========================================================================
+   Layout helpers
+
+   The prototype set these with Tailwind utility classes on the elements
+   themselves. This project vendors only the utilities the landing page uses,
+   so the layout they provided is expressed here instead. Behaviour is
+   unchanged -- these are the same rules Tailwind would have generated.
+   ========================================================================== */
+
+/* Topbar: identity block on the left, actions on the right. The min-width:0
+   is what lets the document title truncate instead of stretching the bar. */
+.editor-topbar-identity { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.editor-topbar-titles { min-width: 0; }
+.editor-topbar-actions { display: flex; align-items: center; gap: 6px; }
+
+/* The back control reuses the diagonal arrow icon, turned to point back. */
+.editor-back-icon { transform: rotate(225deg); }
+
+.editor-command-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.editor-document-item-copy { min-width: 0; text-align: left; }
+
+/* Review panel rows */
+.editor-scan-row { display: flex; align-items: center; justify-content: space-between; }
+.editor-scan-label { display: flex; align-items: center; gap: 8px; }
+.editor-scan-counts { font-size: 9px; }
+.editor-issue-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.editor-issue-kind { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.editor-issue-actions { display: flex; gap: 8px; }
+
+/* Current zoom level, between the two zoom buttons. */
+.editor-zoom-label { min-width: 38px; text-align: center; font-size: 10px; font-weight: 600; }
+
+/* Labels that would crowd a narrow topbar or footer: hidden on small
+   screens, restored at 640px (the prototype's `hidden sm:inline`). */
+.editor-hide-sm { display: none; }
+.editor-autosave { display: none; margin-left: auto; align-items: center; gap: 4px; }
+
+@media (min-width: 640px) {
+  .editor-hide-sm { display: inline; }
+  .editor-autosave { display: inline-flex; }
+}
