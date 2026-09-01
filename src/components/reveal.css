@@ -1,0 +1,28 @@
+/**
+ * reveal.css — the scroll-in transition used by components/Reveal.jsx.
+ *
+ * Deliberately tiny and unprefixed: `.reveal` is a behaviour, not a page
+ * style, so it is shared rather than duplicated into each page stylesheet.
+ */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Respect a reduced-motion preference: show the content, skip the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
