@@ -683,7 +683,10 @@ function Dashboard() {
 
   const submitModal = (value) => {
     if (modal === 'folder') {
-      announce(`Folder "${value}" created`);
+      // The prompt only collects the name; colour and parent are chosen on
+      // the setup screen, which reads the name back out of the query string.
+      setModal(null);
+      navigate(`/create-folder?name=${encodeURIComponent(value)}`);
     } else if (editingId) {
       setDocuments((current) => current.map((doc) => (
         doc.id === editingId ? { ...doc, title: value, edited: 'Just now' } : doc
