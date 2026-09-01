@@ -28,12 +28,20 @@ import {
 // are every label that currently has a page; the rest of navPrimary and all
 // of navWorkspace are still placeholders.
 export const workspaceRoutes = {
-  Dashboard: '/dashboard',
+  'Dashboard': '/dashboard',
   'My documents': '/documents',
-  Editor: '/editor',
+  'Editor': '/editor',
   'Version history': '/version',
+<<<<<<< Updated upstream
   Subscription: '/subscription',
   Features: '/features',
+=======
+  'Subscription': '/subscription',
+  'Features': '/Features',
+  'Settings': '/Settings',
+  'Help and guide':'/help',
+  Storage: '/storage', // <-- Add this entry // <-- Yeh line add karein
+>>>>>>> Stashed changes
 };
 
 export const navPrimary = [

@@ -1,22 +1,329 @@
+// /**
+//  * WorkspaceChrome — the shell shared by every signed-in page.
+//  *
+//  * The dashboard and My Documents pages wear the same frame: dark sidebar,
+//  * mobile top bar + drawer, the search/notifications/profile header, and the
+//  * name/logout dialog. This module owns that frame so the pages only ship
+//  * their own content; add a nav destination here once and every page gets it.
+//  *
+//  * Exports (components only — the nav data lives in workspace-nav.js so this
+//  * file stays compatible with Vite's fast refresh):
+//  *   Sidebar         — fixed desktop rail (collapsible)
+//  *   MobileTopbar    — sticky bar shown under 768px
+//  *   MobileDrawer    — slide-in nav for the top bar's menu button
+//  *   WorkspaceHeader — saved indicator + workspace search + bell + profile
+//  *   WorkspaceModal  — one dialog for naming documents/folders and logout
+//  *
+//  * Styling lives in workspace-chrome.css (imported here, so any page using
+//  * these components gets the shell styles for free). Page-specific styles
+//  * stay in each page's own stylesheet.
+//  */
+// import { useState } from 'react';
+// import './workspace-chrome.css';
+// import {
+//   Bell,
+//   ChevronDown,
+//   FileText,
+//   LogOut,
+//   Menu,
+//   Moon,
+//   PanelLeftClose,
+//   PanelLeftOpen,
+//   Search,
+//   Sun,
+//   X,
+// } from 'lucide-react';
+// import { navPrimary, navWorkspace } from './workspace-nav';
+
+// /* ==========================================================================
+//    Pieces
+//    ========================================================================== */
+
+// // Brand lockup. `compact` drops the wordmark for the collapsed sidebar.
+// export function LogoMark({ compact = false }) {
+//   return (
+//     <div className="dash-logo">
+//       <span className="dash-logo-mark"><FileText size={19} strokeWidth={2.2} /></span>
+//       {!compact && (
+//         <span>
+//           <span className="dash-logo-word">Docu<em>Mend</em></span>
+//           <span className="dash-logo-tag">write with clarity</span>
+//         </span>
+//       )}
+//     </div>
+//   );
+// }
+
+// /**
+//  * One sidebar row. Renders either a badge or a caller-supplied `trailing`
+//  * element (the privacy switch) on the right — never both.
+//  */
+// export function NavButton({ item, active, onClick, trailing, collapsed = false }) {
+//   const Icon = item.icon;
+//   const badge = item.badge ? <span className="dash-nav-badge">{item.badge}</span> : null;
+//   return (
+//     <button
+//       type="button"
+//       onClick={onClick}
+//       // When collapsed the label is gone, so it has to survive as a tooltip
+//       // and an accessible name.
+//       aria-label={collapsed ? item.label : undefined}
+//       title={collapsed ? item.label : undefined}
+//       className={`dash-nav-item ${active ? 'is-active' : ''}`}
+//     >
+//       <span><Icon size={15} strokeWidth={active ? 2.4 : 1.8} />{!collapsed && item.label}</span>
+//       {!collapsed && (trailing ?? badge)}
+//     </button>
+//   );
+// }
+
+// export function Sidebar({
+//   activeNav,
+//   onNavigate,
+//   privacyMode,
+//   onPrivacyToggle,
+//   darkMode,
+//   onThemeToggle,
+//   onLogout,
+//   collapsed,
+//   onToggleCollapse,
+// }) {
+//   return (
+//     <aside className={`dash-sidebar ${collapsed ? 'is-collapsed' : ''}`}>
+//       <div className="dash-sidebar-head">
+//         <LogoMark compact={collapsed} />
+//         <button
+//           type="button"
+//           onClick={onToggleCollapse}
+//           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+//           className="dash-collapse-btn"
+//         >
+//           {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+//         </button>
+//       </div>
+
+//       <nav className="dash-nav" aria-label="Primary navigation">
+//         {!collapsed && <p className="dash-nav-label">Your workspace</p>}
+//         {navPrimary.map((item) => (
+//           <NavButton
+//             key={item.label}
+//             item={item}
+//             active={activeNav === item.label}
+//             onClick={() => onNavigate(item.label)}
+//             collapsed={collapsed}
+//           />
+//         ))}
+//       </nav>
+
+//       <nav className="dash-nav dash-nav-secondary" aria-label="Workspace settings">
+//         {navWorkspace.map((item) => {
+//           const isPrivacy = item.label === 'Privacy mode';
+//           return (
+//             <NavButton
+//               key={item.label}
+//               item={item}
+//               active={activeNav === item.label}
+//               onClick={() => (isPrivacy ? onPrivacyToggle() : onNavigate(item.label))}
+//               collapsed={collapsed}
+//               trailing={isPrivacy ? (
+//                 <span
+//                   className={`dash-switch ${privacyMode ? 'is-on' : ''}`}
+//                   role="img"
+//                   aria-label={privacyMode ? 'Privacy mode on' : 'Privacy mode off'}
+//                 />
+//               ) : undefined}
+//             />
+//           );
+//         })}
+//       </nav>
+
+//       <div className="dash-sidebar-foot">
+//         <button
+//           type="button"
+//           onClick={onThemeToggle}
+//           aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+//           title={collapsed ? (darkMode ? 'Light mode' : 'Dark mode') : undefined}
+//           className="dash-theme-btn"
+//         >
+//           <span>{darkMode ? <Moon size={15} /> : <Sun size={15} />}{!collapsed && (darkMode ? 'Dark mode' : 'Light mode')}</span>
+//           {!collapsed && <span className={`dash-switch ${darkMode ? 'is-on' : ''}`} />}
+//         </button>
+//         <button type="button" onClick={onLogout} className="dash-logout" title={collapsed ? 'Log out' : undefined}>
+//           <LogOut size={14} /> {!collapsed && 'Log out'}
+//         </button>
+//         {!collapsed && <p className="dash-sidebar-note">Private by default. Your words stay yours.</p>}
+//       </div>
+//     </aside>
+//   );
+// }
+
+// // Shown in place of the sidebar below 768px.
+// export function MobileTopbar({ onMenu, onThemeToggle, darkMode }) {
+//   return (
+//     <div className="dash-topbar">
+//       <button type="button" onClick={onMenu} aria-label="Open menu"><Menu size={20} /></button>
+//       <LogoMark />
+//       <button type="button" onClick={onThemeToggle} aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+//         {darkMode ? <Moon size={18} /> : <Sun size={18} />}
+//       </button>
+//     </div>
+//   );
+// }
+
+// /**
+//  * Slide-in nav for small screens. The inner stopPropagation keeps clicks
+//  * inside the panel from reaching the backdrop's close handler.
+//  */
+// export function MobileDrawer({ open, onClose, activeNav, onNavigate, onPrivacyToggle, onLogout }) {
+//   if (!open) return null;
+//   return (
+//     <div className="dash-drawer" onMouseDown={onClose}>
+//       <div className="dash-drawer-panel" onMouseDown={(event) => event.stopPropagation()}>
+//         <div className="dash-drawer-head">
+//           <LogoMark />
+//           <button type="button" onClick={onClose} aria-label="Close menu"><X size={18} /></button>
+//         </div>
+//         <nav className="dash-nav" aria-label="Mobile navigation">
+//           {[...navPrimary, ...navWorkspace].map((item) => (
+//             <NavButton
+//               key={item.label}
+//               item={item}
+//               active={activeNav === item.label}
+//               onClick={() => (item.label === 'Privacy mode' ? onPrivacyToggle() : onNavigate(item.label))}
+//             />
+//           ))}
+//         </nav>
+//         <button type="button" onClick={onLogout} className="dash-logout">
+//           <LogOut size={14} /> Log out
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
+
+// /**
+//  * Top bar of the main column: saved indicator, workspace-wide search, the
+//  * notification bell, and the profile chip. `onAnnounce` receives the toast
+//  * text for the two placeholder actions.
+//  */
+// export function WorkspaceHeader({ search, onSearchChange, onAnnounce }) {
+//   return (
+//     <header className="dash-header dash-soft">
+//       <div className="dash-saved"><span className="dash-dot" /> All changes saved</div>
+
+//       <label className="dash-search">
+//         <span className="dash-sr">Search documents</span>
+//         <Search size={16} />
+//         <input
+//           type="search"
+//           value={search}
+//           onChange={(event) => onSearchChange(event.target.value)}
+//           placeholder="Search your workspace"
+//         />
+//         {search && (
+//           <button type="button" onClick={() => onSearchChange('')} className="dash-search-clear" aria-label="Clear search">
+//             <X size={14} />
+//           </button>
+//         )}
+//       </label>
+
+//       <div className="dash-header-actions">
+//         <button type="button" onClick={() => onAnnounce('You are all caught up')} className="dash-icon-btn" aria-label="Notifications">
+//           <Bell size={17} strokeWidth={1.8} /><span className="dash-pip" />
+//         </button>
+//         <span className="dash-divider" />
+//         <button type="button" onClick={() => onAnnounce('Profile menu is ready')} className="dash-profile">
+//           <span className="dash-avatar">MH</span>
+//           <span className="dash-profile-text">
+//             <span className="dash-profile-name">Mahnoor</span>
+//             <span className="dash-profile-role">Personal workspace</span>
+//           </span>
+//           <ChevronDown size={14} />
+//         </button>
+//       </div>
+//     </header>
+//   );
+// }
+
+// /**
+//  * One dialog serving three jobs, chosen by `mode`: naming a document, naming
+//  * a folder, or confirming logout. Returns null when closed.
+//  *
+//  * State is seeded once per mount: give this component a `key` derived from
+//  * the mode and the draft name, so reopening it for a different document
+//  * remounts it and re-seeds the field — no syncing effect needed.
+//  */
+// export function WorkspaceModal({ mode, initialValue, onClose, onSubmit, onLogout }) {
+//   const [value, setValue] = useState(initialValue);
+
+//   if (!mode) return null;
+
+//   const isLogout = mode === 'logout';
+//   const isFolder = mode === 'folder';
+//   const title = isLogout
+//     ? 'Take a quiet exit?'
+//     : isFolder
+//       ? 'Create a new folder'
+//       : initialValue ? 'Rename document' : 'Start a new document';
+
+//   const submit = (event) => {
+//     event.preventDefault();
+//     if (isLogout) onLogout();
+//     else if (value.trim()) onSubmit(value.trim());
+//   };
+
+//   return (
+//     // Closes on backdrop click only -- the guard stops a drag that ends
+//     // outside the panel from dismissing it.
+//     <div
+//       className="dash-modal-backdrop"
+//       onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}
+//     >
+//       <div className="dash-modal" role="dialog" aria-modal="true" aria-labelledby="dash-modal-title">
+//         <div className="dash-modal-head">
+//           <div>
+//             <p className="dash-modal-kicker">{isLogout ? 'Session' : 'Workspace'}</p>
+//             <h2 id="dash-modal-title" className="dash-modal-title dash-serif">{title}</h2>
+//           </div>
+//           <button type="button" onClick={onClose} className="dash-modal-close" aria-label="Close dialog"><X size={17} /></button>
+//         </div>
+
+//         {isLogout ? (
+//           <form onSubmit={submit}>
+//             <p className="dash-modal-text">Your drafts are safely tucked away. You can return whenever the next sentence finds you.</p>
+//             <div className="dash-modal-actions">
+//               <button type="button" onClick={onClose} className="dash-btn-quiet">Stay here</button>
+//               <button type="submit" className="dash-btn-dark">Log out</button>
+//             </div>
+//           </form>
+//         ) : (
+//           <form onSubmit={submit}>
+//             <label className="dash-modal-label" htmlFor="dash-modal-input">{isFolder ? 'Folder name' : 'Document name'}</label>
+//             <input
+//               id="dash-modal-input"
+//               autoFocus
+//               value={value}
+//               onChange={(event) => setValue(event.target.value)}
+//               placeholder={isFolder ? 'e.g. Research & references' : 'e.g. The shape of an idea'}
+//               className="dash-modal-input"
+//             />
+//             <div className="dash-modal-actions">
+//               <button type="button" onClick={onClose} className="dash-btn-quiet">Cancel</button>
+//               <button type="submit" className="dash-btn-primary">
+//                 {initialValue ? 'Save changes' : isFolder ? 'Create folder' : 'Create document'}
+//               </button>
+//             </div>
+//           </form>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
 /**
  * WorkspaceChrome — the shell shared by every signed-in page.
  *
- * The dashboard and My Documents pages wear the same frame: dark sidebar,
- * mobile top bar + drawer, the search/notifications/profile header, and the
- * name/logout dialog. This module owns that frame so the pages only ship
- * their own content; add a nav destination here once and every page gets it.
- *
- * Exports (components only — the nav data lives in workspace-nav.js so this
- * file stays compatible with Vite's fast refresh):
- *   Sidebar         — fixed desktop rail (collapsible)
- *   MobileTopbar    — sticky bar shown under 768px
- *   MobileDrawer    — slide-in nav for the top bar's menu button
- *   WorkspaceHeader — saved indicator + workspace search + bell + profile
- *   WorkspaceModal  — one dialog for naming documents/folders and logout
- *
- * Styling lives in workspace-chrome.css (imported here, so any page using
- * these components gets the shell styles for free). Page-specific styles
- * stay in each page's own stylesheet.
+ * The dashboard, My Documents, Features, Settings, Help, and Version History
+ * wear the same frame: dark sidebar, mobile top bar + drawer, header, and modals.
  */
 import { useState } from 'react';
 import './workspace-chrome.css';
@@ -65,8 +372,6 @@ export function NavButton({ item, active, onClick, trailing, collapsed = false }
     <button
       type="button"
       onClick={onClick}
-      // When collapsed the label is gone, so it has to survive as a tooltip
-      // and an accessible name.
       aria-label={collapsed ? item.label : undefined}
       title={collapsed ? item.label : undefined}
       className={`dash-nav-item ${active ? 'is-active' : ''}`}
@@ -171,8 +476,7 @@ export function MobileTopbar({ onMenu, onThemeToggle, darkMode }) {
 }
 
 /**
- * Slide-in nav for small screens. The inner stopPropagation keeps clicks
- * inside the panel from reaching the backdrop's close handler.
+ * Slide-in nav for small screens.
  */
 export function MobileDrawer({ open, onClose, activeNav, onNavigate, onPrivacyToggle, onLogout }) {
   if (!open) return null;
@@ -202,9 +506,7 @@ export function MobileDrawer({ open, onClose, activeNav, onNavigate, onPrivacyTo
 }
 
 /**
- * Top bar of the main column: saved indicator, workspace-wide search, the
- * notification bell, and the profile chip. `onAnnounce` receives the toast
- * text for the two placeholder actions.
+ * Top bar of the main column
  */
 export function WorkspaceHeader({ search, onSearchChange, onAnnounce }) {
   return (
@@ -233,7 +535,7 @@ export function WorkspaceHeader({ search, onSearchChange, onAnnounce }) {
         </button>
         <span className="dash-divider" />
         <button type="button" onClick={() => onAnnounce('Profile menu is ready')} className="dash-profile">
-          <span className="dash-avatar">MH</span>
+          <span className="dash-avatar">MA</span>
           <span className="dash-profile-text">
             <span className="dash-profile-name">Mahnoor</span>
             <span className="dash-profile-role">Personal workspace</span>
@@ -246,15 +548,10 @@ export function WorkspaceHeader({ search, onSearchChange, onAnnounce }) {
 }
 
 /**
- * One dialog serving three jobs, chosen by `mode`: naming a document, naming
- * a folder, or confirming logout. Returns null when closed.
- *
- * State is seeded once per mount: give this component a `key` derived from
- * the mode and the draft name, so reopening it for a different document
- * remounts it and re-seeds the field — no syncing effect needed.
+ * WorkspaceModal dialog
  */
 export function WorkspaceModal({ mode, initialValue, onClose, onSubmit, onLogout }) {
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState(initialValue || '');
 
   if (!mode) return null;
 
@@ -273,8 +570,6 @@ export function WorkspaceModal({ mode, initialValue, onClose, onSubmit, onLogout
   };
 
   return (
-    // Closes on backdrop click only -- the guard stops a drag that ends
-    // outside the panel from dismissing it.
     <div
       className="dash-modal-backdrop"
       onMouseDown={(event) => { if (event.currentTarget === event.target) onClose(); }}

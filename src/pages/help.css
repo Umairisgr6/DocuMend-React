@@ -1,0 +1,830 @@
+/* ==========================================================================
+   DOCUMEND HELP & GUIDES STYLING (DUAL LIGHT & DARK FOREST THEME)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE (DEFAULT)
+   -------------------------------------------------------------------------- */
+.help-main-area {
+  min-height: 100vh;
+  position: relative;
+  background-color: #f6f4ee;
+  color: #17362d;
+  padding: 0;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.help-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 36px 36px 80px 36px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ambient glow orbs */
+.help-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: 1;
+}
+
+.help-orb-1 {
+  width: 450px;
+  height: 450px;
+  top: -60px;
+  right: 5%;
+  background: radial-gradient(circle, rgba(223, 139, 41, 0.12), transparent 70%);
+}
+
+.help-orb-2 {
+  width: 500px;
+  height: 500px;
+  bottom: 8%;
+  left: 0;
+  background: radial-gradient(circle, rgba(32, 179, 119, 0.08), transparent 70%);
+}
+
+/* Hero Section */
+.help-hero {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 36px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.help-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #df8b29;
+  background: #fff4e5;
+  border: 1px solid rgba(223, 139, 41, 0.25);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  margin-bottom: 14px;
+}
+
+.help-hero h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 34px;
+  line-height: 1.15;
+  color: #123d24;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+.help-hero p {
+  color: #557266;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+/* Search Capsule */
+.help-search-capsule {
+  width: 100%;
+  max-width: 680px;
+  background: #ffffff;
+  border: 1.5px solid #dcd5c9;
+  border-radius: 16px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.help-search-capsule:focus-within {
+  border-color: #df8b29;
+  box-shadow: 0 8px 30px rgba(223, 139, 41, 0.15);
+}
+
+.help-search-icon {
+  color: #7b9489;
+  flex-shrink: 0;
+}
+
+.help-search-capsule input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #17362d;
+  font-weight: 500;
+}
+
+.help-clear-search-btn {
+  background: transparent;
+  border: none;
+  color: #7b9489;
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+}
+
+.help-clear-search-btn:hover {
+  color: #17362d;
+  background: #f0ebe1;
+}
+
+/* Quick Cards Grid */
+.help-quick-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 36px;
+}
+
+@media (max-width: 900px) {
+  .help-quick-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.help-quick-card {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+}
+
+.help-quick-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.help-quick-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+}
+
+.help-quick-card-mint .help-quick-card-icon { background: #eaf6f0; color: #10b981; }
+.help-quick-card-gold .help-quick-card-icon { background: #fff4e5; color: #df8b29; }
+.help-quick-card-blue .help-quick-card-icon { background: #eef4ff; color: #3b82f6; }
+
+.help-quick-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7b9489;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.help-quick-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #17362d;
+  margin: 0 0 6px 0;
+  line-height: 1.35;
+}
+
+.help-quick-card p {
+  font-size: 13px;
+  color: #557266;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.help-quick-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #df8b29;
+}
+
+/* Accordion Categories */
+.help-sections-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 36px;
+}
+
+.help-accordion-block {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+}
+
+.help-accordion-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: #fdfbf7;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.help-accordion-header:hover {
+  background: #f9f6ef;
+}
+
+.help-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.help-accordion-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  color: #17362d;
+  flex-shrink: 0;
+}
+
+.help-accordion-title h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #17362d;
+  margin: 0 0 2px 0;
+}
+
+.help-accordion-title p {
+  font-size: 12.5px;
+  color: #638274;
+  margin: 0;
+}
+
+.help-accordion-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.help-article-count-pill {
+  font-size: 12px;
+  font-weight: 600;
+  background: #ebe6dc;
+  color: #4b665b;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.help-chevron-toggle {
+  color: #7b9489;
+  transition: transform 0.2s ease;
+}
+
+.help-chevron-toggle.is-expanded {
+  transform: rotate(180deg);
+}
+
+/* Articles List */
+.help-articles-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #ede7dd;
+}
+
+.help-article-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f4efe6;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.help-article-row:last-child {
+  border-bottom: none;
+}
+
+.help-article-row:hover {
+  background: #fbf9f4;
+  padding-left: 28px;
+}
+
+.help-article-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-article-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #df8b29;
+}
+
+.help-article-info h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #17362d;
+  margin: 0;
+}
+
+.help-article-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.help-read-time {
+  font-size: 12px;
+  color: #7b9489;
+}
+
+.help-row-arrow-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f0ebe1;
+  display: grid;
+  place-items: center;
+  color: #17362d;
+  transition: all 0.15s ease;
+}
+
+.help-article-row:hover .help-row-arrow-circle {
+  background: #df8b29;
+  color: #ffffff;
+  transform: translateX(3px);
+}
+
+/* Keyboard Shortcuts Matrix */
+.help-shortcuts-matrix-card {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 20px;
+  padding: 28px;
+  margin-bottom: 36px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+}
+
+.help-shortcuts-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.help-shortcuts-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.help-shortcuts-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #fff4e5;
+  color: #df8b29;
+  display: grid;
+  place-items: center;
+}
+
+.help-shortcuts-title h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #17362d;
+  margin: 0 0 2px 0;
+}
+
+.help-shortcuts-title p {
+  font-size: 13px;
+  color: #557266;
+  margin: 0;
+}
+
+.help-shortcuts-counter {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1f6848;
+  background: #eaf6f0;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.help-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 720px) {
+  .help-shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.help-shortcut-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fdfbf7;
+  border: 1px solid #ede7dd;
+  border-radius: 12px;
+}
+
+.help-shortcut-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #17362d;
+}
+
+.help-shortcut-keys {
+  display: flex;
+  gap: 4px;
+}
+
+.help-kbd {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #dcd5c9;
+  border-bottom: 2px solid #b8b0a2;
+  color: #17362d;
+  padding: 3px 7px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Support Banner */
+.help-support-banner {
+  background: #17362d;
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 24px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.help-support-copy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.help-support-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  color: #df8b29;
+}
+
+.help-support-copy h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 3px 0;
+}
+
+.help-support-copy p {
+  font-size: 13px;
+  color: #a4beaf;
+  margin: 0;
+}
+
+.help-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #df8b29;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.help-support-btn:hover {
+  background: #c8791c;
+}
+
+/* Article Drawer Modal */
+.help-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 120;
+  padding: 20px;
+  animation: helpModalFade 0.2s ease-out;
+}
+
+@keyframes helpModalFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.help-article-drawer {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: helpModalSlide 0.22s ease-out;
+}
+
+@keyframes helpModalSlide {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.help-drawer-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.help-drawer-tags {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-drawer-tag-pill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #fff4e5;
+  color: #df8b29;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.help-drawer-time {
+  font-size: 12px;
+  color: #7b9489;
+}
+
+.help-drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: #7b9489;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.help-drawer-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  color: #17362d;
+  margin: 0 0 18px 0;
+  line-height: 1.25;
+}
+
+.help-drawer-body p {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #4b665b;
+  margin: 0 0 24px 0;
+}
+
+.help-drawer-verified-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eaf6f0;
+  border: 1px solid #cce8dc;
+  color: #1f6848;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.help-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.help-drawer-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #17362d;
+  color: #ffffff;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.help-drawer-action-btn:hover {
+  background: #235244;
+}
+
+/* Toast */
+.help-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #17362d;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 130;
+}
+
+/* ==========================================================================
+   2. DARK FOREST MODE OVERRIDES (.dash-dark)
+   ========================================================================== */
+.dash-dark .help-main-area {
+  background-color: #111a17 !important;
+  color: #e2ece6 !important;
+}
+
+.dash-dark .help-hero h1,
+.dash-dark .help-quick-card h3,
+.dash-dark .help-accordion-title h3,
+.help-article-info h4,
+.dash-dark .help-shortcuts-title h3,
+.dash-dark .help-shortcut-label,
+.dash-dark .help-drawer-title {
+  color: #ffffff !important;
+}
+
+.dash-dark .help-hero p,
+.dash-dark .help-quick-card p,
+.dash-dark .help-accordion-title p,
+.dash-dark .help-shortcuts-title p,
+.dash-dark .help-drawer-body p {
+  color: #8da89b !important;
+}
+
+.dash-dark .help-search-capsule {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .help-search-capsule input {
+  color: #ffffff !important;
+}
+
+.dash-dark .help-quick-card,
+.dash-dark .help-accordion-block,
+.dash-dark .help-shortcuts-matrix-card {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .help-accordion-header {
+  background: #182823 !important;
+}
+
+.dash-dark .help-accordion-header:hover {
+  background: #1e332c !important;
+}
+
+.dash-dark .help-accordion-icon-badge {
+  background: #111f1a !important;
+  border-color: #243f35 !important;
+  color: #e2ece6 !important;
+}
+
+.dash-dark .help-articles-list {
+  border-top-color: #243f35 !important;
+}
+
+.dash-dark .help-article-row {
+  border-bottom-color: #1b2e27 !important;
+}
+
+.dash-dark .help-article-row:hover {
+  background: #1c3029 !important;
+}
+
+.dash-dark .help-row-arrow-circle {
+  background: #1f362e !important;
+  color: #e2ece6 !important;
+}
+
+.dash-dark .help-shortcut-card {
+  background: #121e1a !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .help-kbd {
+  background: #182b24 !important;
+  border-color: #284439 !important;
+  border-bottom-color: #385d4f !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .help-article-drawer {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .help-drawer-verified-box {
+  background: rgba(32, 179, 119, 0.12) !important;
+  border-color: rgba(32, 179, 119, 0.3) !important;
+  color: #4ade80 !important;
+}
+
+.dash-dark .help-drawer-action-btn {
+  background: #203b32 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+/* ==========================================================================
+   HELP & GUIDE LIGHT MODE QUESTION HEADINGS FIX
+   ========================================================================== */
+
+/* 1. Light Mode (Default) - Crisp dark forest font */
+.help-article-info h4 {
+  color: #17362d !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+}
+
+.help-article-row {
+  background: #ffffff !important;
+}
+
+.help-article-row:hover {
+  background: #fbf9f4 !important;
+}
+
+.help-read-time {
+  color: #617d71 !important;
+  font-weight: 500 !important;
+}
+
+/* 2. Dark Mode Override - Pure white font */
+.dash-dark .help-article-info h4 {
+  color: #ffffff !important;
+}
+
+.dash-dark .help-article-row {
+  background: transparent !important;
+}
+
+.dash-dark .help-article-row:hover {
+  background: #1c3029 !important;
+}
+
+.dash-dark .help-read-time {
+  color: #8da89b !important;
+}
