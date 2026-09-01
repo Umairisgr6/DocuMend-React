@@ -30,6 +30,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import './settings.css';
 
@@ -112,11 +113,13 @@ const blueprintsData = [
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('account');
   const [toast, setToast] = useState('');
+  
+  // Consume shared global theme context
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // WorkspaceChrome shell states
   const [activeNav, setActiveNav] = useState('Settings');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false); // Default Light mode, toggle-able to dark
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -170,6 +173,9 @@ export default function Settings() {
     if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
     if (label === 'Version history') return navigate('/version');
     if (label === 'Features') return navigate('/features');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Settings') notify(`${label} view selected`);
@@ -180,7 +186,7 @@ export default function Settings() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -193,10 +199,7 @@ export default function Settings() {
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => {
-          setDarkMode((prev) => !prev);
-          notify(`Switched to ${!darkMode ? 'Dark Forest' : 'Light'} Mode`);
-        }}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
@@ -277,9 +280,7 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* ============================================================= */}
-          {/* TAB 1: ACCOUNT & SECURITY                                    */}
-          {/* ============================================================= */}
+          {/* TAB 1: ACCOUNT & SECURITY */}
           {activeTab === 'account' && (
             <div className="set-v2-panel set-v2-fade-in">
               <div className="set-v2-card-glass">
@@ -423,9 +424,7 @@ export default function Settings() {
             </div>
           )}
 
-          {/* ============================================================= */}
-          {/* TAB 2: DOCUMENT BLUEPRINTS                                    */}
-          {/* ============================================================= */}
+          {/* TAB 2: DOCUMENT BLUEPRINTS */}
           {activeTab === 'templates' && (
             <div className="set-v2-panel set-v2-fade-in">
               <div className="set-v2-template-layout">
@@ -545,9 +544,7 @@ export default function Settings() {
             </div>
           )}
 
-          {/* ============================================================= */}
-          {/* TAB 3: DIAGNOSTICS & WASM COMPUTE RULES                      */}
-          {/* ============================================================= */}
+          {/* TAB 3: DIAGNOSTICS & WASM COMPUTE RULES */}
           {activeTab === 'diagnostics' && (
             <div className="set-v2-panel set-v2-fade-in">
               <div className="set-v2-diag-layout">

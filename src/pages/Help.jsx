@@ -34,6 +34,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import './help.css';
 
@@ -164,10 +165,12 @@ export default function Help() {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [toast, setToast] = useState('');
 
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   // Workspace Chrome Shell States
   const [activeNav, setActiveNav] = useState('Help and Guide');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -213,6 +216,8 @@ export default function Help() {
     if (label === 'Version history') return navigate('/version');
     if (label === 'Features') return navigate('/features');
     if (label === 'Settings') return navigate('/settings');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Help and Guide') notify(`${label} view selected`);
@@ -223,7 +228,7 @@ export default function Help() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -236,10 +241,7 @@ export default function Help() {
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => {
-          setDarkMode((prev) => !prev);
-          notify(`Switched to ${!darkMode ? 'Dark Forest' : 'Light'} Mode`);
-        }}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
@@ -360,7 +362,6 @@ export default function Help() {
 
               return (
                 <div key={sec.id} className={`help-accordion-block help-tone-${sec.tone}`}>
-                  {/* Category Header */}
                   <button
                     type="button"
                     className="help-accordion-header"
@@ -385,7 +386,6 @@ export default function Help() {
                     </div>
                   </button>
 
-                  {/* Article List */}
                   {isOpen && (
                     <div className="help-articles-list">
                       {sec.articles.map((art) => (

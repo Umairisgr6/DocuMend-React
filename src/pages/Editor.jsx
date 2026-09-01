@@ -20,6 +20,11 @@
  * Front-end only: the document list, issues, and word counts are fixtures,
  * and edits are not persisted. Autosave is simulated by a timer.
  */
+/**
+ * Editor — the writing surface, served at the `/editor` route.
+ *
+ * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
+ */
 import { useEffect, useRef, useState } from 'react';
 import './editor.css';
 import {
@@ -96,14 +101,13 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
-// The documents offered in the navigator and the topbar picker. `color`
-// picks a thumbnail tint (see .thumb-* in editor.css).
 const startingDocuments = [
   { id: 1, title: 'FYP Phase 1 Report', type: 'DOCX', pages: 20, color: 'saffron' },
   { id: 2, title: 'Research Proposal v3', type: 'PDF', pages: 30, color: 'sage' },
@@ -112,9 +116,6 @@ const startingDocuments = [
   { id: 5, title: 'Research_notes_final', type: 'DOCX', pages: 12, color: 'sky' },
 ];
 
-// Seeded into the contentEditable surface on mount. The heatmap spans are
-// what the legend above the canvas refers to: each marks a class of problem
-// the review panel also lists.
 const initialContent = `
     <p class="editor-eyebrow">FYP Phase 1 — DocuMend</p>
     <p class="editor-subtitle">A focused workspace for better writing, clearer thinking, and confident citations.</p>
@@ -128,11 +129,8 @@ const initialContent = `
     <p>DocuMend's architecture is divided into three primary modules: the Document Parser, the Analysis Engine, and the Suggestion Interface. The parser extracts structure and content, while the analysis engine identifies patterns across the document. The <span class="editor-heatmap-mark heatmap-citation" title="Citation needed for this technical claim">WASM proxy</span> keeps sensitive text local, although the <span class="editor-heatmap-mark heatmap-redundancy" title="Redundant phrase: already used in the abstract">60 fps editing</span> claim should be cross-referenced.</p>
   `;
 
-// The ribbon tabs, in order. Two carry an icon; the rest are text only.
 const modeTabs = ['Home', 'Insert', 'Layout', 'References', 'Review', 'View', 'AI Tools'];
 
-// Findings shown under the review panel's Issues tab. `tone` picks the card
-// accent (.issue-* in editor.css).
 const reviewItems = [
   { kind: 'Contradiction', tone: 'coral', icon: AlertTriangle, detail: 'Budget conflict — PKR 45,000 in §2 para 1 vs PKR 32,000 in §2 para 2', location: '§2.1 · line 3', action: 'Auto-fix' },
   { kind: 'Structure Gap', tone: 'amber', icon: AlertTriangle, detail: 'Claim "zero external transmission" lacks sub-section on WASM proxy architecture.', location: '§3.1 · line 2', action: 'Auto-fix' },
@@ -143,13 +141,6 @@ const reviewItems = [
    Pieces
    ========================================================================== */
 
-/**
- * A single icon button in the ribbon.
- *
- * `onMouseDown` preventDefault is the important bit: without it, pressing the
- * button blurs the contentEditable surface and the browser drops the text
- * selection, so the formatting command would have nothing to act on.
- */
 function ToolbarButton({ icon: Icon, label, onClick, active = false }) {
   return (
     <button
@@ -169,14 +160,16 @@ function ToolbarButton({ icon: Icon, label, onClick, active = false }) {
    The page
    ========================================================================== */
 function Editor() {
-  // --- shell state (shared with the other workspace pages) ---
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  // --- shell state ---
   const [activeNav, setActiveNav] = useState('Editor');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [workspaceSearch, setWorkspaceSearch] = useState('');
-  const [modal, setModal] = useState(null); // 'document' | 'logout' | null
+  const [modal, setModal] = useState(null);
   const [toast, setToast] = useState('');
 
   // --- editor state ---
@@ -192,8 +185,8 @@ function Editor() {
   const [commentCount, setCommentCount] = useState(2);
   const [showReviewPanel, setShowReviewPanel] = useState(true);
   const [focusMode, setFocusMode] = useState(false);
-  const [pageLayout, setPageLayout] = useState('standard'); // 'standard' | 'wide'
-  const [issueStates, setIssueStates] = useState({});       // kind -> 'fixed' | 'ignored'
+  const [pageLayout, setPageLayout] = useState('standard');
+  const [issueStates, setIssueStates] = useState({});
   const [documentSearch, setDocumentSearch] = useState('');
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [heatmapEnabled, setHeatmapEnabled] = useState(true);
@@ -209,16 +202,12 @@ function Editor() {
 
   const announce = (message) => setToast(message);
 
-  // Toasts clear themselves. The cleanup matters: without it, a new message
-  // arriving mid-countdown would be wiped early by the previous timer.
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(''), 2800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  // Seed the writing surface once. `dataset.ready` guards against React
-  // re-running this and wiping whatever the user has typed.
   useEffect(() => {
     if (editorRef.current && !editorRef.current.dataset.ready) {
       editorRef.current.innerHTML = initialContent;
@@ -226,13 +215,10 @@ function Editor() {
     }
   }, []);
 
-  // Cancel a pending autosave if the page unmounts mid-countdown.
   useEffect(() => () => {
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
   }, []);
 
-  // Ctrl/Cmd+S saves, Ctrl/Cmd+F opens the in-document find bar instead of
-  // the browser's, which cannot see inside the editable surface usefully.
   useEffect(() => {
     const handleShortcut = (event) => {
       if (!(event.metaKey || event.ctrlKey)) return;
@@ -251,8 +237,6 @@ function Editor() {
     return () => window.removeEventListener('keydown', handleShortcut);
   }, []);
 
-  // Close the File menu on Escape or a click elsewhere, so it does not sit
-  // open over the ribbon once the pointer moves away.
   useEffect(() => {
     if (!showFileMenu) return;
     const close = (event) => {
@@ -267,16 +251,12 @@ function Editor() {
     };
   }, [showFileMenu]);
 
-  // Simulated autosave: every edit marks the document dirty, then settles
-  // back to saved a second after typing stops.
   const markUnsaved = () => {
     setIsSaved(false);
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => setIsSaved(true), 1000);
   };
 
-  // execCommand is deprecated but remains the only cross-browser way to
-  // apply formatting to the current selection in a contentEditable region.
   const runCommand = (command, value) => {
     editorRef.current?.focus();
     window.document.execCommand(command, false, value);
@@ -290,9 +270,6 @@ function Editor() {
     announce(message);
   };
 
-  // Counting happens here, on the keystroke, rather than during render: the
-  // document text lives in a ref, and reading a ref while rendering gives a
-  // stale answer because changing it does not schedule a re-render.
   const updateFind = (query) => {
     setFindQuery(query);
     if (!query) {
@@ -326,8 +303,6 @@ function Editor() {
     announce(resolution === 'fixed' ? `${kind} fixed` : `${kind} ignored`);
   };
 
-  // Switching documents re-seeds the surface. Every document shows the same
-  // fixture text for now — there is no per-document content yet.
   const changeDocument = (id) => {
     setSelectedId(id);
     if (editorRef.current) {
@@ -346,13 +321,21 @@ function Editor() {
     announce('New document created');
   };
 
-  // Labels with a real page route there; the rest highlight and say so.
   const selectNav = (label) => {
     const route = workspaceRoutes[label];
     if (route && label !== 'Editor') {
       navigate(route);
       return;
     }
+    if (label === 'Dashboard') return navigate('/dashboard');
+    if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
+    if (label === 'Version history') return navigate('/version');
+    if (label === 'Features') return navigate('/features');
+    if (label === 'Settings') return navigate('/settings');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
+
     setActiveNav(label);
     if (label !== 'Editor') announce(`${label} view selected`);
     setMobileSidebar(false);
@@ -369,7 +352,7 @@ function Editor() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -378,14 +361,14 @@ function Editor() {
         onNavigate={selectNav}
         privacyMode={privacyMode}
         onPrivacyToggle={() => {
-          setPrivacyMode((current) => !current);
+          setPrivacyMode((prev) => !prev);
           announce(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
 
       <MobileDrawer
@@ -393,7 +376,7 @@ function Editor() {
         onClose={() => setMobileSidebar(false)}
         activeNav={activeNav}
         onNavigate={selectNav}
-        onPrivacyToggle={() => setPrivacyMode((current) => !current)}
+        onPrivacyToggle={() => setPrivacyMode((prev) => !prev)}
         onLogout={() => setModal('logout')}
       />
 
@@ -403,7 +386,7 @@ function Editor() {
         <div className="editor-page">
           <div className={`editor-workspace ${focusMode ? 'is-focus-mode' : ''} ${showReviewPanel ? '' : 'review-hidden'}`}>
 
-            {/* ---------- Topbar: identity, quick actions, save state ---------- */}
+            {/* Topbar: identity, quick actions, save state */}
             <div className="editor-topbar">
               <div className="editor-topbar-identity">
                 <button type="button" onClick={() => navigate('/documents')} className="editor-back-button" aria-label="Back to documents">
@@ -436,17 +419,15 @@ function Editor() {
 
               <div className="editor-topbar-actions">
                 <button type="button" className="editor-top-action" onClick={() => announce('Document exported as DOCX')}><Printer size={15} /><span className="editor-hide-sm">Export</span></button>
-                <button type="button" className="editor-top-action editor-share-action" onClick={() => announce('Share settings opened')}><Share2 size={14} /><span className="editor-hide-sm">Share</span></button>
+                <button type="button" className="editor-top-action editor-share-action" onClick={() => navigate('/share')}><Share2 size={14} /><span className="editor-hide-sm">Share</span></button>
                 <button type="button" className="editor-save-button" onClick={() => { setIsSaved(true); announce('Document saved'); }}><Check size={15} /> Save</button>
-                <span className="editor-avatar">MH</span>
+                <span className="editor-avatar">MA</span>
               </div>
             </div>
 
-            {/* ---------- Ribbon tabs and the File menu ---------- */}
+            {/* Ribbon tabs and the File menu */}
             <div className="editor-navigation">
               <div className="editor-mode-tabs">
-                {/* stopPropagation so the window-level close listener doesn't
-                    immediately shut the menu this click just opened. */}
                 <div className="editor-file-menu-wrap" onPointerDown={(event) => event.stopPropagation()}>
                   <button
                     type="button"
@@ -497,12 +478,10 @@ function Editor() {
               </div>
             </div>
 
-            {/* Hidden pickers driven by the File menu. `webkitdirectory` is
-                what turns the second one into a folder picker. */}
             <input ref={fileInputRef} type="file" hidden accept=".doc,.docx,.pdf,.txt,.rtf,.md" onChange={(event) => handleOpenFile(event.target.files)} />
             <input ref={folderInputRef} type="file" hidden multiple webkitdirectory="" directory="" onChange={(event) => handleOpenFolder(event.target.files)} />
 
-            {/* ---------- The ribbon itself, one panel per tab ---------- */}
+            {/* The ribbon itself */}
             <div className="editor-toolkit" aria-label={`${activeTool} ribbon`}>
               {activeTool === 'Home' && (
                 <>
@@ -526,8 +505,6 @@ function Editor() {
                       </label>
                       <label className="editor-size-wrap">
                         <span className="dash-sr">Font size</span>
-                        {/* execCommand fontSize takes 1-7, not points, so the
-                            labels and values differ here. */}
                         <select defaultValue="4" onChange={(event) => runCommand('fontSize', event.target.value)}>
                           <option value="3">11</option><option value="4">12</option><option value="5">14</option><option value="6">16</option>
                         </select>
@@ -758,7 +735,7 @@ function Editor() {
               </div>
             )}
 
-            {/* ---------- Whole-document commands ---------- */}
+            {/* Whole-document commands */}
             <div className="editor-command-bar">
               <div className="editor-command-group">
                 <button type="button" className="editor-command-button command-scan" onClick={() => announce('Document scan complete')}><ShieldCheck size={14} /> Scan doc</button>
@@ -769,7 +746,7 @@ function Editor() {
               <span className="editor-page-count">{currentDocument?.pages ?? 1} pages · {currentDocument?.type ?? 'DOCX'}</span>
             </div>
 
-            {/* ---------- Navigator | canvas | review ---------- */}
+            {/* Navigator | canvas | review */}
             <div className={`editor-main-grid ${documentPanelExpanded ? 'documents-expanded' : 'documents-collapsed'}`}>
 
               <aside className="editor-document-panel" aria-label="Editor document navigator">
@@ -860,9 +837,6 @@ function Editor() {
                 </div>
 
                 <div className="editor-paper-wrap">
-                  {/* The writing surface. Content is injected once on mount
-                      rather than passed as children, so React never re-renders
-                      over what the user has typed. */}
                   <article
                     ref={editorRef}
                     contentEditable

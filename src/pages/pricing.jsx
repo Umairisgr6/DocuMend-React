@@ -39,6 +39,7 @@ import {
 
 // Navigation Helpers: Route mappings and custom client-side router
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate, usePathname } from '../router';
 
 // Custom CSS for pricing tier cards, illustrations, and dark mode overrides
@@ -243,6 +244,9 @@ export default function Pricing() {
   const backHref = cameFromWorkspace ? "/dashboard" : "/";
   const backLabel = cameFromWorkspace ? "Back to Dashboard" : "Back to DocuMend";
 
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   // Page Local State
   const [isAnnual, setIsAnnual] = useState(true);
   const [toast, setToast] = useState("");
@@ -250,7 +254,6 @@ export default function Pricing() {
   // Workspace Chrome Shell States
   const [activeNav, setActiveNav] = useState('Subscription');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -274,6 +277,7 @@ export default function Pricing() {
     if (label === 'Settings') return navigate('/settings');
     if (label === 'Help and Guide') return navigate('/help');
     if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Subscription' && label !== 'Pricing') notify(`${label} view selected`);
@@ -302,7 +306,7 @@ export default function Pricing() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -315,7 +319,7 @@ export default function Pricing() {
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}

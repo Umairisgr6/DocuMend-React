@@ -16,6 +16,11 @@
  * Swap `startingDocuments` and the handlers for API calls when a backend
  * exists.
  */
+/**
+ * MyDocuments — the private library, served at the `/documents` route.
+ *
+ * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import './my-documents.css';
 import {
@@ -35,24 +40,17 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
-// Editor-style strip above the heading. Only Home is a real view; the others
-// surface a toast until their tools exist.
 const tabs = ['Home', 'Insert', 'References', 'AI Tools'];
 
-// The filter chips. "All" is the no-filter state; the rest match the
-// `category` field on each document.
 const categories = ['All', 'Academic', 'Legal', 'Researcher', 'Corporate', 'Draft'];
 
-// Seed data matching the design. `tint` picks a preview colour
-// (.docs-preview-*), `category` feeds the chips, and each tag's `tone` picks
-// a chip colour (.docs-tag-*): issue = coral, warn = amber, good = green,
-// info = blue.
 const startingDocuments = [
   {
     id: 1, title: 'FYP Phase 1 Report', type: 'DOCX', modified: 'today, 9:42 am', pages: 20,
@@ -86,8 +84,6 @@ const startingDocuments = [
   },
 ];
 
-// Stat tiles. Static placeholders from the design, like the dashboard's
-// marketing figures — they do not recount when documents change.
 const stats = [
   { icon: FileText, value: '12', label: 'Total Documents', tone: 'cream' },
   { icon: Pencil, value: '3', label: 'Drafts in progress', tone: 'lavender' },
@@ -99,15 +95,10 @@ const stats = [
    Pieces
    ========================================================================== */
 
-/**
- * One library card: tinted preview banner (faux text lines, file icon,
- * type stamp), then title, modified line, and tag chips.
- */
 function DocumentCard({ doc, onOpen }) {
   return (
     <button type="button" onClick={onOpen} className="docs-card dash-lift">
       <span className={`docs-preview docs-preview-${doc.tint}`}>
-        {/* Decorative stand-ins for a page of text. */}
         <span className="docs-preview-lines" aria-hidden="true">
           <span /><span /><span />
         </span>
@@ -131,29 +122,26 @@ function DocumentCard({ doc, onOpen }) {
    The page
    ========================================================================== */
 function MyDocuments() {
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   const [activeNav, setActiveNav] = useState('My documents');
   const [activeTab, setActiveTab] = useState('Home');
   const [activeCategory, setActiveCategory] = useState('All');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
-  // One search state feeds both boxes — the workspace search in the header
-  // and the big library search below the heading — so they never disagree.
   const [search, setSearch] = useState('');
   const [documents, setDocuments] = useState(startingDocuments);
-  const [modal, setModal] = useState(null); // 'document' | 'logout' | null
+  const [modal, setModal] = useState(null);
   const [toast, setToast] = useState('');
 
-  // Toasts clear themselves. The cleanup matters: without it, a new message
-  // arriving mid-countdown would be wiped early by the previous timer.
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(''), 2800);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  // Chip filter and search compose: a card must satisfy both.
   const filteredDocuments = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     return documents.filter((doc) => {
@@ -166,13 +154,22 @@ function MyDocuments() {
 
   const announce = (message) => setToast(message);
 
-  // Labels with a real page route there; the rest highlight and say so.
   const selectNav = (label) => {
     const route = workspaceRoutes[label];
     if (route && label !== 'My documents') {
       navigate(route);
       return;
     }
+    if (label === 'Dashboard') return navigate('/dashboard');
+    if (label === 'Editor') return navigate('/editor');
+    if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
+    if (label === 'Version history') return navigate('/version');
+    if (label === 'Features') return navigate('/features');
+    if (label === 'Settings') return navigate('/settings');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
+
     setActiveNav(label);
     if (label !== 'My documents') announce(`${label} view selected`);
     setMobileSidebar(false);
@@ -208,7 +205,7 @@ function MyDocuments() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -217,14 +214,14 @@ function MyDocuments() {
         onNavigate={selectNav}
         privacyMode={privacyMode}
         onPrivacyToggle={() => {
-          setPrivacyMode((current) => !current);
+          setPrivacyMode((prev) => !prev);
           announce(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
       />
 
       <MobileDrawer
@@ -232,7 +229,7 @@ function MyDocuments() {
         onClose={() => setMobileSidebar(false)}
         activeNav={activeNav}
         onNavigate={selectNav}
-        onPrivacyToggle={() => setPrivacyMode((current) => !current)}
+        onPrivacyToggle={() => setPrivacyMode((prev) => !prev)}
         onLogout={() => setModal('logout')}
       />
 
@@ -240,7 +237,7 @@ function MyDocuments() {
         <WorkspaceHeader search={search} onSearchChange={setSearch} onAnnounce={announce} />
 
         <div className="dash-body">
-          {/* Editor-style tab strip, with a profile bubble on the right. */}
+          {/* Editor-style tab strip */}
           <div className="docs-tabs-row dash-rise dash-d1">
             <div className="docs-tabs" role="tablist" aria-label="Document tools">
               {tabs.map((tab) => (
@@ -277,7 +274,7 @@ function MyDocuments() {
             </button>
           </div>
 
-          {/* Library search — same state as the header's workspace search. */}
+          {/* Library search */}
           <label className="docs-search dash-rise dash-d2">
             <span className="dash-sr">Search documents</span>
             <Search size={17} />
@@ -315,14 +312,14 @@ function MyDocuments() {
             ))}
           </div>
 
-          {/* The library itself */}
+          {/* Document card grid */}
           {filteredDocuments.length > 0 ? (
             <div className="docs-grid dash-rise dash-d4">
               {filteredDocuments.map((doc) => (
                 <DocumentCard
                   key={doc.id}
                   doc={doc}
-                  onOpen={() => announce(`Opening "${doc.title}"`)}
+                  onOpen={() => navigate('/editor')}
                 />
               ))}
             </div>

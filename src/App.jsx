@@ -1,33 +1,49 @@
+/**
+ * App.jsx
+ * -----------------------------------------------------------------------------
+ * Root Application Entrypoint & Client-Side Routing Table.
+ * 
+ * Features:
+ * - ErrorBoundary for catching rendering runtime errors.
+ * - Global ThemeProvider wrapper enabling synchronized dark/light switching across all pages.
+ * - Normalized pathname router supporting both lowercase and capitalized URLs.
+ * -----------------------------------------------------------------------------
+ */
+
 import { ErrorBoundary } from './components/ErrorBoundary';
-import CreateDocument from './pages/CreateDocument';
-import CreateFolder from './pages/CreateFolder';
+import { ThemeProvider } from './components/ThemeContext'; // <-- Global theme provider
+
+// Page Components
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/editor';
-import Features from './pages/Features';
-import Help from './pages/Help';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
 import NotFound from './pages/NotFound';
 import Pricing from './pages/pricing';
-import Settings from './pages/settings';
 import SignUp from './pages/SignUp';
-import Storage from './pages/storage';
-import UploadDocument from './pages/UploadDocument';
 import VersionHistory from './pages/version';
+import Features from './pages/Features';
+import Settings from './pages/settings';
+import Help from './pages/Help';
+import Storage from './pages/storage';
+import Share from './pages/Share';
+
+// Custom lightweight router hook
 import { usePathname } from './router';
 
-// Route table. Sidebar links reach these through the workspaceRoutes map in
-// components/workspace-nav.js — add a route here AND an entry there, or the
-// sidebar item will only show a toast.
 function Router() {
   const rawPathname = usePathname();
-  // Tolerate a trailing slash and any capitalisation in the address bar.
+  
+  // Normalize pathname: convert to lowercase and strip trailing slashes to prevent 404s
   const pathname = rawPathname ? rawPathname.toLowerCase().replace(/\/$/, '') || '/' : '/';
 
+  // Public & Auth Routes
   if (pathname === '/' || pathname === '') return <LandingPage />;
   if (pathname === '/signup') return <SignUp />;
   if (pathname === '/login') return <LogIn />;
+
+  // Workspace Protected Routes
   if (pathname === '/dashboard') return <Dashboard />;
   if (pathname === '/documents' || pathname === '/my-documents') return <MyDocuments />;
   if (pathname === '/editor') return <Editor />;
@@ -36,22 +52,22 @@ function Router() {
   if (pathname === '/settings') return <Settings />;
   if (pathname === '/help' || pathname === '/help-and-guide') return <Help />;
   if (pathname === '/storage') return <Storage />;
-  // Reached from the dashboard's quick-action tiles, not from the sidebar.
-  if (pathname === '/upload') return <UploadDocument />;
-  // Both setup screens take the name as ?name=... from the dashboard prompt.
-  if (pathname === '/create-folder') return <CreateFolder />;
-  if (pathname === '/create-document') return <CreateDocument />;
-  // Two paths for one page: the sidebar calls it Subscription, the landing
-  // page links to Pricing.
+  if (pathname === '/share' || pathname === '/share-document') return <Share />;
+
+  // Subscription & Pricing (both aliases map to the same page)
   if (pathname === '/pricing' || pathname === '/subscription') return <Pricing />;
 
+  // Fallback 404
   return <NotFound />;
 }
 
 function App() {
   return (
     <ErrorBoundary>
-      <Router />
+      {/* ThemeProvider supplies the global dark/light state to all routed pages */}
+      <ThemeProvider>
+        <Router />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

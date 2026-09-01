@@ -20,14 +20,19 @@
  *      workspace-chrome.css), so a folder tag and a document chip of the
  *      same colour actually match.
  */
+/**
+ * CreateDocument — the new-document setup screen, reached from the
+ * dashboard's "Create document" quick action.
+ *
+ * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
+ */
 import { useMemo, useState } from 'react';
-import './create-folder.css';
+import './create-document.css';
 import {
-  ArrowRight,
   Check,
-  FolderOpen,
-  FolderPlus,
-  Info,
+  FileText,
+  Plus,
+  Search,
   ShieldCheck,
   Sparkles,
   X,
@@ -40,25 +45,25 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 
-const MAX_NAME = 48;
+const MAX_NAME = 64;
 
-// The same six tints the dashboard uses for document chips.
-const COLORS = [
-  { id: 'saffron', label: 'Saffron' },
-  { id: 'sage', label: 'Sage' },
-  { id: 'coral', label: 'Coral' },
-  { id: 'lavender', label: 'Lavender' },
-  { id: 'sky', label: 'Sky' },
-  { id: 'gold', label: 'Gold' },
-];
+const TYPES = ['Thesis', 'Research paper', 'Legal', 'Report', 'Other'];
 
-const PARENTS = [
-  { id: 'root', name: 'Root level', meta: 'Main directory' },
+const FOLDERS = [
   { id: 'php', name: 'PHP Docs', meta: '4 files' },
   { id: 'legal', name: 'Legal drafts', meta: '2 files' },
   { id: 'research', name: 'Research', meta: '1 file' },
+  { id: 'root', name: 'Root level', meta: 'Main directory' },
+];
+
+const ANALYSES = [
+  { id: 'grammar', label: 'Grammar', hint: 'Style + syntax pass' },
+  { id: 'contradiction', label: 'Contradiction', hint: 'Logic conflicts' },
+  { id: 'plagiarism', label: 'Plagiarism', hint: 'Source overlap' },
+  { id: 'bibliography', label: 'Bibliography', hint: 'Citation integrity' },
 ];
 
 /** Reads the name the dashboard prompt passed through the query string. */
@@ -70,10 +75,12 @@ function nameFromUrl() {
   }
 }
 
-export default function CreateFolder() {
-  // Shared workspace chrome state, matching every other signed-in page.
+export default function CreateDocument() {
+  // Global Shared Theme
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  // Shared workspace chrome state
   const [activeNav, setActiveNav] = useState('My documents');
-  const [darkMode, setDarkMode] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -83,13 +90,18 @@ export default function CreateFolder() {
 
   // Page state. The name is seeded once, from the URL.
   const [name, setName] = useState(nameFromUrl);
-  const [color, setColor] = useState('gold');
-  const [parent, setParent] = useState('root');
-  const [created, setCreated] = useState(false);
+  const [type, setType] = useState('Thesis');
+  const [query, setQuery] = useState('');
+  const [folder, setFolder] = useState('php');
+  const [checks, setChecks] = useState(['grammar', 'contradiction']);
 
-  const swatch = useMemo(() => COLORS.find((c) => c.id === color) ?? COLORS[0], [color]);
-  const parentLabel = PARENTS.find((p) => p.id === parent)?.name ?? 'Root level';
   const trimmedName = name.trim();
+  const folderLabel = FOLDERS.find((item) => item.id === folder)?.name ?? 'Root level';
+
+  const visibleFolders = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return FOLDERS.filter((item) => item.name.toLowerCase().includes(needle));
+  }, [query]);
 
   const announce = (message) => {
     setToast(message);
@@ -102,22 +114,37 @@ export default function CreateFolder() {
       navigate(route);
       return;
     }
+    if (label === 'Dashboard') return navigate('/dashboard');
+    if (label === 'Editor') return navigate('/editor');
+    if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
+    if (label === 'Version history') return navigate('/version');
+    if (label === 'Features') return navigate('/features');
+    if (label === 'Settings') return navigate('/settings');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
+
     setActiveNav(label);
     announce(`${label} view selected`);
     setMobileSidebar(false);
   };
 
-  const createFolder = () => {
+  const toggleCheck = (id) => {
+    setChecks((current) => (
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    ));
+  };
+
+  const createDocument = () => {
     if (!trimmedName) return;
-    setCreated(true);
-    announce(`Folder "${trimmedName}" created`);
+    navigate('/editor');
   };
 
   return (
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -127,7 +154,7 @@ export default function CreateFolder() {
         privacyMode={privacyMode}
         onPrivacyToggle={() => setPrivacyMode((current) => !current)}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setChromeModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
@@ -149,25 +176,23 @@ export default function CreateFolder() {
           onAnnounce={announce}
         />
 
-        <div className="folder-page">
-          {/* The gradient hairline is a wrapper rather than a border so it
-              can fade around the corners of the card. */}
-          <div className="folder-frame">
-            <section className="folder-card">
-              <span className="folder-bloom" aria-hidden="true" />
+        <div className="newdoc-page">
+          <div className="newdoc-frame">
+            <section className="newdoc-card">
+              <span className="newdoc-bloom" aria-hidden="true" />
 
-              <header className="folder-card-head">
-                <span className="folder-head-icon"><FolderPlus size={20} /></span>
-                <div className="folder-head-copy">
-                  <p className="folder-eyebrow">Workspace · Step 1 of 1</p>
-                  <h1>Create folder</h1>
-                  <p className="folder-head-sub">
-                    Organise your documents by creating a new folder.
+              <header className="newdoc-card-head">
+                <span className="newdoc-head-icon"><FileText size={20} /></span>
+                <div className="newdoc-head-copy">
+                  <p className="newdoc-eyebrow">New document · Setup</p>
+                  <h1>Customise your experience</h1>
+                  <p className="newdoc-head-sub">
+                    Set up your new document before opening the editor.
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="folder-close"
+                  className="newdoc-close"
                   aria-label="Close and return to the dashboard"
                   onClick={() => navigate('/dashboard')}
                 >
@@ -175,117 +200,150 @@ export default function CreateFolder() {
                 </button>
               </header>
 
-              <div className="folder-card-body">
+              <div className="newdoc-card-body">
                 {/* Name */}
-                <div className="folder-field">
-                  <label className="folder-eyebrow" htmlFor="folder-name">Folder name</label>
-                  <div className="folder-input">
-                    <span className={`folder-dot dash-glyph-${color}`} aria-hidden="true" />
+                <div className="newdoc-field">
+                  <label className="newdoc-eyebrow" htmlFor="newdoc-name">Document name</label>
+                  <div className="newdoc-input">
+                    <FileText size={16} />
                     <input
-                      id="folder-name"
+                      id="newdoc-name"
                       value={name}
                       maxLength={MAX_NAME}
-                      placeholder="e.g. PHP Research"
-                      onChange={(event) => {
-                        setName(event.target.value);
-                        setCreated(false);
-                      }}
+                      placeholder="e.g. Thesis Chapter A"
+                      onChange={(event) => setName(event.target.value)}
                     />
-                    <span className="folder-count">{name.length}/{MAX_NAME}</span>
+                    <span className="newdoc-count">{name.length}/{MAX_NAME}</span>
                   </div>
                 </div>
 
-                {/* Colour tag */}
-                <div className="folder-field">
-                  <span className="folder-eyebrow">Colour tag</span>
-                  <div className="folder-swatches">
-                    {COLORS.map((option) => {
-                      const active = option.id === color;
+                {/* Type */}
+                <div className="newdoc-field">
+                  <span className="newdoc-eyebrow">Document type</span>
+                  <div className="newdoc-types">
+                    {TYPES.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        aria-pressed={option === type}
+                        onClick={() => setType(option)}
+                        className={`newdoc-type ${option === type ? 'is-active' : ''}`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Destination folder */}
+                <div className="newdoc-field">
+                  <label className="newdoc-eyebrow" htmlFor="newdoc-folder-search">
+                    Save to folder
+                  </label>
+                  <div className="newdoc-input">
+                    <Search size={16} />
+                    <input
+                      id="newdoc-folder-search"
+                      type="search"
+                      value={query}
+                      placeholder="Search or select a folder…"
+                      onChange={(event) => setQuery(event.target.value)}
+                    />
+                  </div>
+
+                  <div className="newdoc-folders">
+                    {visibleFolders.length === 0 ? (
+                      <p className="newdoc-empty">No folders match “{query.trim()}”.</p>
+                    ) : (
+                      visibleFolders.map((option) => {
+                        const active = option.id === folder;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => setFolder(option.id)}
+                            className={`newdoc-folder ${active ? 'is-active' : ''}`}
+                          >
+                            <span className="newdoc-folder-dot" aria-hidden="true" />
+                            <span className="newdoc-folder-copy">
+                              <span className="newdoc-folder-name">{option.name}</span>
+                              <span className="newdoc-folder-meta">{option.meta}</span>
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Analysis toggles */}
+                <div className="newdoc-field">
+                  <span className="newdoc-eyebrow">Run DDIE analysis on open</span>
+                  <div className="newdoc-checks">
+                    {ANALYSES.map((option) => {
+                      const on = checks.includes(option.id);
                       return (
                         <button
                           key={option.id}
                           type="button"
-                          aria-label={option.label}
-                          aria-pressed={active}
-                          onClick={() => setColor(option.id)}
-                          className={`folder-swatch dash-glyph-${option.id} ${active ? 'is-active' : ''}`}
+                          role="switch"
+                          aria-checked={on}
+                          onClick={() => toggleCheck(option.id)}
+                          className={`newdoc-check ${on ? 'is-on' : ''}`}
                         >
-                          {active && <Check size={15} strokeWidth={3} />}
-                        </button>
-                      );
-                    })}
-                    <span className="folder-swatch-name">{swatch.label}</span>
-                  </div>
-                </div>
-
-                {/* Parent */}
-                <div className="folder-field">
-                  <span className="folder-eyebrow">Nest inside existing folder (optional)</span>
-                  <div className="folder-parents">
-                    {PARENTS.map((option) => {
-                      const active = option.id === parent;
-                      return (
-                        <button
-                          key={option.id}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => setParent(option.id)}
-                          className={`folder-parent ${active ? 'is-active' : ''}`}
-                        >
-                          <FolderOpen size={19} />
-                          <span className="folder-parent-name">{option.name}</span>
-                          <span className="folder-parent-meta">{option.meta}</span>
+                          <span className="newdoc-check-box">
+                            {on && <Check size={13} strokeWidth={3.2} />}
+                          </span>
+                          <span className="newdoc-check-copy">
+                            <span className="newdoc-check-label">{option.label}</span>
+                            <span className="newdoc-check-hint">{option.hint}</span>
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Live preview of where the folder will land */}
-                <div className="folder-preview">
-                  <span className={`folder-dot dash-glyph-${color}`} aria-hidden="true" />
+                {/* Live preview */}
+                <div className="newdoc-preview">
+                  <span className="newdoc-preview-dot" aria-hidden="true" />
                   <p>
                     <span>Preview: </span>
-                    {parentLabel} / {trimmedName || 'Untitled folder'}
+                    {folderLabel} / {trimmedName || 'Untitled document'} · {type} ·{' '}
+                    {checks.length} check{checks.length === 1 ? '' : 's'}
                   </p>
-                  <Info size={15} />
                 </div>
               </div>
 
-              <footer className="folder-card-foot">
-                {created ? (
-                  <button type="button" className="folder-primary" onClick={() => navigate('/documents')}>
-                    <Check size={15} /> Folder created — open documents <ArrowRight size={14} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="folder-primary"
-                    disabled={!trimmedName}
-                    onClick={createFolder}
-                  >
-                    <FolderPlus size={15} /> Create folder
-                  </button>
-                )}
+              <footer className="newdoc-card-foot">
+                <button
+                  type="button"
+                  className="newdoc-primary"
+                  disabled={!trimmedName}
+                  onClick={createDocument}
+                >
+                  <Plus size={15} strokeWidth={2.6} /> Create document
+                </button>
 
                 <button
                   type="button"
-                  className="folder-quiet"
+                  className="newdoc-quiet"
                   onClick={() => navigate('/dashboard')}
                 >
                   Cancel
                 </button>
 
-                <p className="folder-saved">
+                <p className="newdoc-saved">
                   Saved locally <ShieldCheck size={15} />
                 </p>
               </footer>
             </section>
           </div>
 
-          <p className="folder-tip">
+          <p className="newdoc-tip">
             <Sparkles size={14} />
-            Tip: colour tags make folders instantly scannable in your workspace.
+            Tip: fewer checks on open means a faster first render of large drafts.
           </p>
         </div>
       </main>
@@ -301,7 +359,7 @@ export default function CreateFolder() {
         }}
       />
 
-      {toast && <div className="folder-toast">{toast}</div>}
+      {toast && <div className="newdoc-toast">{toast}</div>}
     </div>
   );
 }

@@ -38,4 +38,5 @@ export const workspaceRoutes = {
   Settings: '/settings',
   'Help and Guide': '/help',
   Storage: '/storage',
+  'Share Document': '/share', // <-- Add this line
 };

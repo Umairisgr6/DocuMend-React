@@ -22,6 +22,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import './features.css';
 
@@ -174,10 +175,12 @@ export default function Features() {
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState('');
 
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   // Workspace Chrome shell states
   const [activeNav, setActiveNav] = useState('Features');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -234,6 +237,7 @@ export default function Features() {
     if (label === 'Settings') return navigate('/settings');
     if (label === 'Help and Guide') return navigate('/help');
     if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Features') notify(`${label} view selected`);
@@ -244,7 +248,7 @@ export default function Features() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -257,7 +261,7 @@ export default function Features() {
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}

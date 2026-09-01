@@ -1,0 +1,797 @@
+/* ==========================================================================
+   DOCUMEND CRYPTOGRAPHIC SHARE & P2P STYLING (LIGHT & DARK FOREST MODE)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE (DEFAULT)
+   -------------------------------------------------------------------------- */
+.share-main-area {
+  min-height: 100vh;
+  position: relative;
+  background-color: #f6f4ee;
+  color: #17362d;
+  padding: 0;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.share-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 36px 36px 80px 36px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ambient light glows */
+.share-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(100px);
+  z-index: 1;
+}
+
+.share-glow-1 {
+  width: 480px;
+  height: 480px;
+  top: -60px;
+  right: 5%;
+  background: radial-gradient(circle, rgba(223, 139, 41, 0.12), transparent 70%);
+}
+
+.share-glow-2 {
+  width: 520px;
+  height: 520px;
+  bottom: 8%;
+  left: 0;
+  background: radial-gradient(circle, rgba(32, 179, 119, 0.08), transparent 70%);
+}
+
+/* Hero Header */
+.share-header-hero {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 32px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.share-kicker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #df8b29;
+  background: #fff4e5;
+  border: 1px solid rgba(223, 139, 41, 0.25);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.share-header-hero h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 32px;
+  line-height: 1.15;
+  color: #112620;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.share-header-hero p {
+  color: #557266;
+  font-size: 14.5px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Glass Card Base */
+.share-glass-card {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  margin-bottom: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   1. Dynamic Identity Bar & Document Selector
+   -------------------------------------------------------------------------- */
+.share-identity-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: #fdfbf7;
+  border: 1.5px solid #e8e2d5;
+  flex-wrap: wrap;
+}
+
+.share-identity-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 280px;
+  flex-wrap: wrap;
+}
+
+.share-doc-pill-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #dcd5c9;
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+
+.share-doc-select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #17362d;
+  cursor: pointer;
+}
+
+.share-key-display-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.share-identity-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17362d;
+  white-space: nowrap;
+}
+
+.share-key-code {
+  font-family: 'DM Mono', monospace, Consolas;
+  font-size: 13px;
+  color: #4b665b;
+  background: #ede6dc;
+  padding: 6px 12px;
+  border-radius: 8px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #ddd6cb;
+}
+
+.share-identity-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-rotate-key-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid #dcd5c9;
+  color: #17362d;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-rotate-key-btn:hover {
+  border-color: #df8b29;
+  color: #df8b29;
+}
+
+.share-rotate-key-btn.is-rotating svg {
+  animation: shareSpin 0.6s linear infinite;
+}
+
+.share-copy-key-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #17362d;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-copy-key-btn:hover {
+  background: #235244;
+}
+
+.share-qr-btn {
+  background: #ffffff;
+  border: 1.5px solid #dcd5c9;
+  color: #17362d;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.share-qr-btn:hover {
+  border-color: #df8b29;
+  color: #df8b29;
+}
+
+/* --------------------------------------------------------------------------
+   2. Section Cards & Header Blocks
+   -------------------------------------------------------------------------- */
+.share-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.share-icon-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.share-bubble-green { background: #eaf6f0; color: #10b981; }
+.share-bubble-gold { background: #fff4e5; color: #df8b29; }
+
+.share-section-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.share-title-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-title-flex h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #17362d;
+  margin: 0;
+}
+
+.share-live-sync-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #eaf6f0;
+  color: #10b981;
+  border: 1px solid #cce8dc;
+  padding: 2px 9px;
+  border-radius: 9999px;
+}
+
+.share-rsa-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #fff4e5;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  padding: 2px 9px;
+  border-radius: 9999px;
+}
+
+.share-pulsing-icon {
+  animation: sharePulse 1.6s infinite ease-in-out;
+}
+
+@keyframes sharePulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+.share-section-title-wrap p {
+  font-size: 13.5px;
+  color: #557266;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* --------------------------------------------------------------------------
+   3. Card Body Panel & Input Capsules
+   -------------------------------------------------------------------------- */
+.share-card-body-panel {
+  background: #fbf9f4;
+  border: 1px solid #ede7dd;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.share-input-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-input-block label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #17362d;
+}
+
+/* Input Capsule Outer Container */
+.share-green-capsule {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #20b377;
+  border-radius: 14px;
+  padding: 6px 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* Hover State */
+.share-green-capsule:hover {
+  border-color: #df8b29 !important;
+  box-shadow: 0 0 0 3px rgba(223, 139, 41, 0.12);
+}
+
+/* Focus State */
+.share-green-capsule:focus-within {
+  border-color: #df8b29 !important;
+  box-shadow: 0 0 0 3.5px rgba(223, 139, 41, 0.2) !important;
+}
+
+.share-input-key-icon {
+  color: #20b377;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.share-green-capsule:hover .share-input-key-icon,
+.share-green-capsule:focus-within .share-input-key-icon {
+  color: #df8b29;
+}
+
+/* Inner Input Element (Cleaned) */
+.share-green-capsule input {
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 8px 0;
+  font-size: 14.5px;
+  color: #17362d;
+  font-weight: 500;
+  -webkit-appearance: none;
+}
+
+.share-green-capsule input:focus,
+.share-green-capsule input:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.share-green-capsule input::placeholder {
+  color: #8da89b;
+}
+
+.share-clear-input {
+  background: transparent;
+  border: none;
+  color: #7b9489;
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+
+.share-clear-input:hover {
+  color: #17362d;
+}
+
+.share-capsule-file input {
+  font-weight: 700;
+  color: #17362d;
+}
+
+/* Custom Checkbox */
+.share-toggle-row {
+  margin-top: 16px;
+}
+
+.share-checkbox-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.share-checkbox-custom input {
+  display: none;
+}
+
+.share-check-square {
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border: 2px solid #20b377;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.share-checkbox-custom input:checked + .share-check-square {
+  background: #20b377;
+}
+
+.share-checkbox-custom input:checked + .share-check-square::after {
+  content: '✓';
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.share-checkbox-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #17362d;
+}
+
+.share-mt-14 {
+  margin-top: 14px;
+}
+
+.share-fade-in {
+  animation: shareFade 0.2s ease-out;
+}
+
+@keyframes shareFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Action Buttons */
+.share-btn-wrapper {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.share-action-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #df8b29;
+  color: #ffffff;
+  border: none;
+  padding: 13px 36px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(223, 139, 41, 0.25);
+  min-width: 260px;
+}
+
+.share-action-primary-btn:hover {
+  background: #c8791c;
+  transform: translateY(-1px);
+}
+
+.share-action-primary-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.share-spin {
+  animation: shareSpin 0.7s linear infinite;
+}
+
+@keyframes shareSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.share-connected-callout {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #eaf6f0;
+  border: 1px solid #cce8dc;
+  color: #1f6848;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. QR Modal Dialog
+   -------------------------------------------------------------------------- */
+.share-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 120;
+  padding: 20px;
+}
+
+.share-qr-modal {
+  background: #ffffff;
+  border: 1px solid #e5dfd5;
+  border-radius: 20px;
+  max-width: 400px;
+  width: 100%;
+  padding: 26px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.share-qr-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.share-qr-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.share-qr-title h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #17362d;
+  margin: 0;
+}
+
+.share-modal-close {
+  background: transparent;
+  border: none;
+  color: #7b9489;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.share-qr-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.share-qr-matrix-preview {
+  width: 160px;
+  height: 160px;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1.5px solid #e5dfd5;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  margin-bottom: 16px;
+}
+
+.share-simulated-qr {
+  width: 100%;
+  height: 100%;
+}
+
+.share-qr-hint {
+  font-size: 13px;
+  color: #557266;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.share-qr-modal-footer {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.share-btn-done {
+  background: #17362d;
+  color: #ffffff;
+  border: none;
+  padding: 9px 24px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Toast */
+.share-toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #17362d;
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 130;
+}
+
+.share-accent-green { color: #10b981; }
+.share-accent-gold { color: #df8b29; }
+
+/* ==========================================================================
+   5. DARK FOREST MODE OVERRIDES (.dash-dark)
+   ========================================================================== */
+.dash-dark .share-main-area {
+  background-color: #111a17 !important;
+  color: #e2ece6 !important;
+}
+
+.dash-dark .share-header-hero h1,
+.dash-dark .share-title-flex h3,
+.dash-dark .share-input-block label,
+.dash-dark .share-checkbox-label,
+.dash-dark .share-qr-title h3 {
+  color: #ffffff !important;
+}
+
+.dash-dark .share-header-hero p,
+.dash-dark .share-section-title-wrap p,
+.dash-dark .share-qr-hint {
+  color: #8da89b !important;
+}
+
+.dash-dark .share-glass-card,
+.dash-dark .share-qr-modal {
+  background: #15241f !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .share-identity-bar {
+  background: #14221d !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .share-doc-pill-select {
+  background: #172822 !important;
+  border-color: #28443b !important;
+}
+
+.dash-dark .share-doc-select {
+  color: #ffffff !important;
+}
+
+.dash-dark .share-identity-label {
+  color: #ffffff !important;
+}
+
+.dash-dark .share-key-code {
+  background: #101c17 !important;
+  color: #a4beaf !important;
+  border-color: #243f35 !important;
+}
+
+.dash-dark .share-rotate-key-btn {
+  background: #172822 !important;
+  border-color: #28443b !important;
+  color: #d1ded7 !important;
+}
+
+.dash-dark .share-rotate-key-btn:hover {
+  border-color: #df8b29 !important;
+  color: #df8b29 !important;
+}
+
+.dash-dark .share-qr-btn {
+  background: #1c3029 !important;
+  border-color: #2b493f !important;
+  color: #ffffff !important;
+}
+
+.dash-dark .share-card-body-panel {
+  background: #121e1a !important;
+  border-color: #20352e !important;
+}
+
+.dash-dark .share-green-capsule {
+  background: #14241f !important;
+  border-color: #278d63 !important;
+}
+
+.dash-dark .share-green-capsule:hover,
+.dash-dark .share-green-capsule:focus-within {
+  border-color: #df8b29 !important;
+  box-shadow: 0 0 0 3.5px rgba(223, 139, 41, 0.25) !important;
+}
+
+.dash-dark .share-green-capsule input {
+  color: #ffffff !important;
+}
+
+.dash-dark .share-green-capsule input::placeholder {
+  color: #5d7c70 !important;
+}
+
+.dash-dark .share-capsule-file input {
+  color: #ffffff !important;
+}
+
+.dash-dark .share-check-square {
+  background: #162822 !important;
+  border-color: #20b377 !important;
+}
+
+.dash-dark .share-connected-callout {
+  background: rgba(32, 179, 119, 0.12) !important;
+  border-color: rgba(32, 179, 119, 0.3) !important;
+  color: #4ade80 !important;
+}
+
+/* ==========================================================================
+   DOCUMENT SELECTOR DROPDOWN VISIBILITY FIX (LIGHT & DARK MODE)
+   ========================================================================== */
+
+/* 1. Light Mode Options */
+.share-doc-select option {
+  background-color: #ffffff !important;
+  color: #17362d !important;
+  padding: 8px 12px;
+}
+
+/* 2. Dark Mode Options (Dark Forest background with crisp white text) */
+.dash-dark .share-doc-select option {
+  background-color: #14241f !important;
+  color: #ffffff !important;
+}
+
+/* Option Hover & Focus */
+.dash-dark .share-doc-select option:checked,
+.dash-dark .share-doc-select option:hover {
+  background-color: #203a31 !important;
+  color: #e8992e !important; /* Golden active text */
+}

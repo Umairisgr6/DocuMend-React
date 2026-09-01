@@ -31,14 +31,17 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import './storage.css';
 
 export default function Storage() {
+  // Global Shared Theme Context
+  const { darkMode, toggleDarkMode } = useTheme();
+
   // Workspace Chrome Shell States
   const [activeNav, setActiveNav] = useState('Storage');
   const [privacyMode, setPrivacyMode] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [modal, setModal] = useState(null);
@@ -199,6 +202,7 @@ export default function Storage() {
     if (label === 'Features') return navigate('/features');
     if (label === 'Settings') return navigate('/settings');
     if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Share Document') return navigate('/share');
 
     setActiveNav(label);
     if (label !== 'Storage') notify(`${label} view selected`);
@@ -209,7 +213,7 @@ export default function Storage() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((prev) => !prev)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -222,10 +226,7 @@ export default function Storage() {
           notify(`Privacy mode ${privacyMode ? 'paused' : 'enabled'}`);
         }}
         darkMode={darkMode}
-        onThemeToggle={() => {
-          setDarkMode((prev) => !prev);
-          notify(`Switched to ${!darkMode ? 'Dark Forest' : 'Light'} Mode`);
-        }}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
@@ -334,7 +335,7 @@ export default function Storage() {
             </div>
           </section>
 
-          {/* 2. Top-Level Metric Stats Grid (Dynamic 12 & 247 numbers) */}
+          {/* 2. Top-Level Metric Stats Grid */}
           <section className="stor-metrics-grid" aria-label="Storage Metrics">
             <div className="stor-stat-box" onClick={handleAddNewDocument} style={{ cursor: 'pointer' }}>
               <div className="stor-stat-icon stor-icon-green">

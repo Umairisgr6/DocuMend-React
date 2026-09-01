@@ -39,6 +39,7 @@ import {
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
+import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 
 const MAX_NAME = 64;
@@ -69,9 +70,11 @@ function nameFromUrl() {
 }
 
 export default function CreateDocument() {
-  // Shared workspace chrome state, matching every other signed-in page.
+  // Global Shared Theme
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  // Shared workspace chrome state
   const [activeNav, setActiveNav] = useState('My documents');
-  const [darkMode, setDarkMode] = useState(false);
   const [privacyMode, setPrivacyMode] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -105,6 +108,16 @@ export default function CreateDocument() {
       navigate(route);
       return;
     }
+    if (label === 'Dashboard') return navigate('/dashboard');
+    if (label === 'Editor') return navigate('/editor');
+    if (label === 'Subscription' || label === 'Pricing') return navigate('/pricing');
+    if (label === 'Version history') return navigate('/version');
+    if (label === 'Features') return navigate('/features');
+    if (label === 'Settings') return navigate('/settings');
+    if (label === 'Help and Guide') return navigate('/help');
+    if (label === 'Storage') return navigate('/storage');
+    if (label === 'Share Document') return navigate('/share');
+
     setActiveNav(label);
     announce(`${label} view selected`);
     setMobileSidebar(false);
@@ -116,8 +129,6 @@ export default function CreateDocument() {
     ));
   };
 
-  // "Create document" always ended in the editor; this screen only adds the
-  // setup step in front of it.
   const createDocument = () => {
     if (!trimmedName) return;
     navigate('/editor');
@@ -127,7 +138,7 @@ export default function CreateDocument() {
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         darkMode={darkMode}
       />
 
@@ -137,7 +148,7 @@ export default function CreateDocument() {
         privacyMode={privacyMode}
         onPrivacyToggle={() => setPrivacyMode((current) => !current)}
         darkMode={darkMode}
-        onThemeToggle={() => setDarkMode((current) => !current)}
+        onThemeToggle={toggleDarkMode}
         onLogout={() => setChromeModal('logout')}
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
@@ -160,8 +171,6 @@ export default function CreateDocument() {
         />
 
         <div className="newdoc-page">
-          {/* The gradient hairline is a wrapper rather than a border so it can
-              fade around the corners, as on the folder screen. */}
           <div className="newdoc-frame">
             <section className="newdoc-card">
               <span className="newdoc-bloom" aria-hidden="true" />
@@ -290,7 +299,7 @@ export default function CreateDocument() {
                   </div>
                 </div>
 
-                {/* Live preview of what will be created */}
+                {/* Live preview */}
                 <div className="newdoc-preview">
                   <span className="newdoc-preview-dot" aria-hidden="true" />
                   <p>
