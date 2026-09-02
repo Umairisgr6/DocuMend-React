@@ -30,7 +30,7 @@ import {
   Sparkles,
 } from "lucide-react";
 // CSS styling specific to the Login page
-import "./LogIn.css";
+import "./log-in.css";
 import { BrandMark } from "../components/BrandMark";
 import { navigate } from "../router";
 

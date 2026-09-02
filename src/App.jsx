@@ -15,19 +15,19 @@ import { ThemeProvider } from './components/ThemeContext'; // <-- Global theme p
 
 // Page Components
 import Dashboard from './pages/Dashboard';
-import Editor from './pages/editor';
+import Editor from './pages/Editor';
 import ForgotPassword from './pages/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
 import NotFound from './pages/NotFound';
-import Pricing from './pages/pricing';
+import Pricing from './pages/Pricing';
 import SignUp from './pages/SignUp';
-import VersionHistory from './pages/version';
+import VersionHistory from './pages/Version';
 import Features from './pages/Features';
-import Settings from './pages/settings';
+import Settings from './pages/Settings';
 import Help from './pages/Help';
-import Storage from './pages/storage';
+import Storage from './pages/Storage';
 import Share from './pages/Share';
 import CreateDocument from './pages/CreateDocument'; // <-- Import karein
 import CreateFolder from './pages/CreateFolder';
