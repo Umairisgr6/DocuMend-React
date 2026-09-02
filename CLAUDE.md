@@ -53,7 +53,7 @@ Three layers, in this order:
 
 Page styles are class-prefixed so they cannot collide: `landing-`, `signup-`,
 `login-`, `docs-`, `dash-`, `editor-`, `history-`, `features-`, `upload-`,
-`folder-`, `newdoc-`, `share-`, `pricing-`. Pick a new prefix for a new page
+`folder-`, `newdoc-`, `share-`, `pricing-`, `reset-`. Pick a new prefix for a new page
 and check it against the others first — `.page-heading`, `.sidebar` and
 `.notice` have all collided across files before.
 
@@ -84,10 +84,15 @@ Plus sage `#7caa91`, coral `#c86f52`, gold hover `#b67d18`.
 
 ## Naming conventions
 
-- Components `PascalCase.jsx`, stylesheets `kebab-case.css`.
-- Existing violations, left alone rather than churned: `pricing.jsx`,
-  `version.jsx`, `settings.jsx`, `storage.jsx` (should be PascalCase) and
-  `LogIn.css` (should be kebab-case).
+- Components `PascalCase.jsx`, stylesheets `kebab-case.css`. **No exceptions
+  remain** -- `pricing`, `settings`, `storage`, `version` and `LogIn.css` were
+  renamed on 2 Sep 2026, so a lowercase component file is now simply wrong
+  rather than "one of the old ones".
+- `src/pages/Editor.jsx` in particular: the import in `App.jsx` had been
+  flipped to `./pages/editor` and back six times, because a lowercase import
+  resolves on Windows and macOS and fails only on Linux. It is `Editor`. If it
+  is lowercase again, someone uploaded a file through the GitHub web UI
+  instead of pulling first.
 - Two files whose names differ only in case cannot coexist here — Windows and
   macOS hold one file, git tracks two. `Features.css` and `features.css` both
   ended up tracked once, from a GitHub web upload. `git rm --cached` the wrong
@@ -138,10 +143,6 @@ earlier version of the editor. Removing them is safe but has not been done.
 Verified 2 Sep 2026. Fixed items are removed rather than annotated, so
 anything listed here is still live.
 
-- **`App.jsx` imports `./pages/editor`, but git tracks `Editor.jsx`.** Builds
-  on Windows, fails on Linux and macOS — so a clone on a Mac, or any CI
-  runner, gets a broken build. One character. This has been reintroduced once
-  after being fixed; see the case-sensitivity note under Git.
 - **`WorkspaceModal`, medium:** declares `aria-modal="true"` but has no Escape
   handler, no focus trap, and does not move focus into the dialog in logout
   mode. `UploadDocument.jsx` already has a correct Escape handler — copy that
@@ -150,9 +151,8 @@ anything listed here is still live.
   `featureData` dead code in `LandingPage.jsx`, and `ThemeContext.jsx`
   exporting a hook alongside a component (which downgrades fast refresh —
   the fix is to split it, as `workspace-nav.js` did).
-- Login's "Forgot password?" and sign-up's social buttons still only show a
-  message. Forgot-password has no page to point at yet, so a message is
-  honest there for now.
+- Sign-up's social buttons still only show a message; there is no OAuth to
+  wire them to yet.
 - Nothing persists except the upload screen's recent-documents list. Every
   document, edit, folder and toggle lives in component state and is gone on
   reload.
