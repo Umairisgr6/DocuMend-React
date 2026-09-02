@@ -33,7 +33,12 @@ There is no router library. `src/router.js` is ~30 lines:
 2. an entry in `workspaceRoutes` in `src/components/workspace-nav.js`
 
 Skip step 2 and the sidebar link silently falls back to a toast instead of
-navigating.
+navigating. Pages reached from a dashboard tile rather than the sidebar
+(`/upload`, `/create-folder`, `/create-document`) stay out of that map.
+
+The router has no params. To pass a value between pages, put it in the query
+string and read it with `URLSearchParams` — the create screens take their
+name that way, which also lets them survive a refresh.
 
 ## CSS architecture
 
@@ -47,11 +52,23 @@ Three layers, in this order:
 3. One stylesheet per page, imported by its own component.
 
 Page styles are class-prefixed so they cannot collide: `landing-`, `signup-`,
-`docs-`, `dash-`, `editor-`.
+`login-`, `docs-`, `dash-`, `editor-`, `history-`, `features-`, `upload-`,
+`folder-`, `newdoc-`, `share-`, `pricing-`. Pick a new prefix for a new page
+and check it against the others first — `.page-heading`, `.sidebar` and
+`.notice` have all collided across files before.
 
 The workspace palette is declared on `.dash-shell`, deliberately not on
 `:root`, so it cannot leak into the marketing pages. Dark mode is `.dash-dark`
-on that same shell — never on `<html>`.
+on that same shell — never on `<html>`. The flag itself comes from
+`components/ThemeContext.jsx`: pages call `useTheme()` rather than holding
+their own `darkMode` state, and the choice persists to `localStorage`.
+
+**No page-level card frames.** Version history and the editor both used to
+wrap their content in a bordered, rounded, shadowed panel. Inside the
+workspace chrome that reads as a panel within a panel, and a `max-width` on
+the outer box leaves dead gutters. Pages run edge to edge; a centred
+`max-width` belongs on the text itself (`.history-content`, `.editor-paper`),
+not on the whole page.
 
 ## Palette
 
@@ -68,9 +85,13 @@ Plus sage `#7caa91`, coral `#c86f52`, gold hover `#b67d18`.
 ## Naming conventions
 
 - Components `PascalCase.jsx`, stylesheets `kebab-case.css`.
-- Existing violations, left alone rather than churned:
-  `pricing.jsx`, `version.jsx` (should be PascalCase) and `LogIn.css`
-  (should be kebab-case).
+- Existing violations, left alone rather than churned: `pricing.jsx`,
+  `version.jsx`, `settings.jsx`, `storage.jsx` (should be PascalCase) and
+  `LogIn.css` (should be kebab-case).
+- Two files whose names differ only in case cannot coexist here — Windows and
+  macOS hold one file, git tracks two. `Features.css` and `features.css` both
+  ended up tracked once, from a GitHub web upload. `git rm --cached` the wrong
+  one; never plain `git rm`, which may delete the file you meant to keep.
 
 ## The editor
 
@@ -98,6 +119,12 @@ earlier version of the editor. Removing them is safe but has not been done.
   before pushing. `App.jsx` conflicts nearly every time; the resolution is
   always to keep every route from both sides.
 - **Never force-push** — Mahnoor's commits sit on top of shared history.
+- Her changes sometimes arrive as whole-file uploads rather than merges, which
+  silently reverts work in files she did not intend to touch (`version.css`
+  lost its readability fix this way). After pulling, spot-check any file you
+  recently changed. Recovering is a `git cherry-pick -n <sha>` of the original
+  commit, not a redo — check first that the reverted file matches the fix's
+  parent, and it will replay cleanly.
 - Windows' filesystem is case-insensitive, so a rename that only changes case
   is not recorded by `git add`. Use two steps:
   `git mv a.jsx Tmp.jsx && git mv Tmp.jsx A.jsx`. Getting this wrong produces
@@ -108,13 +135,24 @@ earlier version of the editor. Removing them is safe but has not been done.
 
 ## Known open issues
 
-- **Dashboard, high:** `QuickAction` sets a preventDefault `onDragOver` on all
-  four tiles but only "Upload / drop" has an `onDrop`. Dropping a file on any
-  other tile navigates the tab away and destroys all in-memory state.
+Verified 2 Sep 2026. Fixed items are removed rather than annotated, so
+anything listed here is still live.
+
+- **`App.jsx` imports `./pages/editor`, but git tracks `Editor.jsx`.** Builds
+  on Windows, fails on Linux and macOS — so a clone on a Mac, or any CI
+  runner, gets a broken build. One character. This has been reintroduced once
+  after being fixed; see the case-sensitivity note under Git.
 - **`WorkspaceModal`, medium:** declares `aria-modal="true"` but has no Escape
   handler, no focus trap, and does not move focus into the dialog in logout
-  mode.
-- `Dashboard.jsx` carries ~427 lines of commented-out duplicate code.
-- `featureData` in `LandingPage.jsx` is dead code (a standing lint warning).
-- Login's "Sign Up" / "Forgot password?" links and sign-up's social buttons
-  only show a message.
+  mode. `UploadDocument.jsx` already has a correct Escape handler — copy that
+  pattern rather than inventing one.
+- 39 lint warnings, almost all unused imports in `Help.jsx`; plus
+  `featureData` dead code in `LandingPage.jsx`, and `ThemeContext.jsx`
+  exporting a hook alongside a component (which downgrades fast refresh —
+  the fix is to split it, as `workspace-nav.js` did).
+- Login's "Forgot password?" and sign-up's social buttons still only show a
+  message. Forgot-password has no page to point at yet, so a message is
+  honest there for now.
+- Nothing persists except the upload screen's recent-documents list. Every
+  document, edit, folder and toggle lives in component state and is gone on
+  reload.
