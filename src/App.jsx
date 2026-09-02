@@ -16,6 +16,7 @@ import { ThemeProvider } from './components/ThemeContext'; // <-- Global theme p
 // Page Components
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
+import ForgotPassword from './pages/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
 import MyDocuments from './pages/MyDocuments';
@@ -45,6 +46,7 @@ function Router() {
   if (pathname === '/' || pathname === '') return <LandingPage />;
   if (pathname === '/signup') return <SignUp />;
   if (pathname === '/login') return <LogIn />;
+  if (pathname === '/forgot-password' || pathname === '/reset-password') return <ForgotPassword />;
 
   // Workspace Protected Routes
   if (pathname === '/dashboard') return <Dashboard />;

@@ -296,7 +296,7 @@ export default function LogIn() {
                 <button
                   className="login-forgot"
                   type="button"
-                  onClick={() => setMessage("Password reset is opening for you.")}
+                  onClick={() => navigate("/forgot-password")}
                 >
                   Forgot password?
                 </button>
