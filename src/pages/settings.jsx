@@ -236,7 +236,7 @@ export default function Settings() {
               <button
                 type="button"
                 className="set-v2-primary-btn"
-                onClick={() => navigate('/editor')}
+                onClick={() => navigate('/CreateDocument')}
               >
                 <Plus size={16} strokeWidth={2.6} />
                 <span>New Document</span>

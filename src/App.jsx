@@ -15,7 +15,7 @@ import { ThemeProvider } from './components/ThemeContext'; // <-- Global theme p
 
 // Page Components
 import Dashboard from './pages/Dashboard';
-import Editor from './pages/Editor';
+import Editor from './pages/editor';
 import ForgotPassword from './pages/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import LogIn from './pages/LogIn';
