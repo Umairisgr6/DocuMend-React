@@ -1,0 +1,62 @@
+/**
+ * brand-mark.css — the shared logo.
+ *
+ * Colours are stated literally rather than pulled from --dash-* or a page's
+ * own tokens: this component appears on the marketing pages, the auth cards
+ * and inside the workspace shell, and those three do not share a variable
+ * scope. The brand should also not change shade depending on which page it
+ * happens to be sitting on.
+ *
+ * The wordmark is the exception -- it inherits currentColor, so it reads
+ * correctly on the dark story panels and the light headers alike.
+ */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Gold tile with a dog-eared bottom-left corner. The radius is set inline by
+   the component so it scales with `size`. */
+.brand-tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  background: #d8a53c;
+  box-shadow: 0 6px 14px rgba(216, 165, 60, 0.2);
+  color: #172d26;
+}
+
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand-word {
+  color: inherit;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 1.25em;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brand-word em {
+  color: #e3b658;
+  font-style: normal;
+}
+
+.brand-tagline {
+  margin-top: 5px;
+  color: inherit;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55em;
+  letter-spacing: 0.2em;
+  opacity: 0.62;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
