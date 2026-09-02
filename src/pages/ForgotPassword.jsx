@@ -20,11 +20,11 @@ import './forgot-password.css';
 import {
   ArrowLeft,
   ArrowRight,
-  KeyRound,
   LockKeyhole,
   MailCheck,
   ShieldCheck,
 } from 'lucide-react';
+import { BrandMark } from '../components/BrandMark';
 import { navigate } from '../router';
 
 // Deliberately loose: enough to catch a typo, not enough to reject a valid
@@ -91,10 +91,7 @@ export default function ForgotPassword() {
         {/* Story side                                                        */}
         {/* ---------------------------------------------------------------- */}
         <div className="reset-story">
-          <div className="reset-brand">
-            <span className="reset-brand-mark"><KeyRound size={17} strokeWidth={2.4} /></span>
-            Docu<span className="reset-brand-accent">Mend</span>
-          </div>
+          <BrandMark size={30} className="reset-brand" />
 
           <div className="reset-story-copy">
             <p className="reset-kicker">

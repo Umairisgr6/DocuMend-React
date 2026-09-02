@@ -23,7 +23,6 @@ import './workspace-chrome.css';
 import {
   Bell,
   ChevronDown,
-  FileText,
   LogOut,
   Menu,
   Moon,
@@ -33,6 +32,7 @@ import {
   Sun,
   X,
 } from 'lucide-react';
+import { BrandMark } from './BrandMark';
 import { navPrimary, navWorkspace } from './workspace-nav';
 
 /* ==========================================================================
@@ -40,17 +40,16 @@ import { navPrimary, navWorkspace } from './workspace-nav';
    ========================================================================== */
 
 // Brand lockup. `compact` drops the wordmark for the collapsed sidebar.
+// Kept as a named export so the Sidebar/MobileTopbar/MobileDrawer call sites
+// stay unchanged; the logo itself now comes from the shared BrandMark.
 export function LogoMark({ compact = false }) {
   return (
-    <div className="dash-logo">
-      <span className="dash-logo-mark"><FileText size={19} strokeWidth={2.2} /></span>
-      {!compact && (
-        <span>
-          <span className="dash-logo-word">Docu<em>Mend</em></span>
-          <span className="dash-logo-tag">write with clarity</span>
-        </span>
-      )}
-    </div>
+    <BrandMark
+      size={36}
+      wordmark={!compact}
+      tagline="write with clarity"
+      className="dash-logo"
+    />
   );
 }
 

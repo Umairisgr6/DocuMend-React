@@ -26,12 +26,12 @@ import {
   Check,
   Eye,
   EyeOff,
-  FileText,
   LockKeyhole,
   Sparkles,
 } from "lucide-react";
 // CSS styling specific to the Login page
 import "./LogIn.css";
+import { BrandMark } from "../components/BrandMark";
 import { navigate } from "../router";
 
 /* -------------------------------------------------------------------------- */
@@ -214,14 +214,7 @@ export default function LogIn() {
         {/* ========================================================= */}
         <div className="login-story">
           {/* Brand logo & icon */}
-          <div className="login-brand">
-            <span className="login-brand-mark">
-              <FileText size={17} strokeWidth={2.3} />
-            </span>
-            <span>
-              Docu<span className="login-brand-accent">Mend</span>
-            </span>
-          </div>
+          <BrandMark size={30} className="login-brand" />
 
           {/* Heading and taglines */}
           <div className="login-story-copy">

@@ -29,6 +29,7 @@ import {
   Sidebar,
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
+import { BrandMark } from '../components/BrandMark';
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
@@ -111,13 +112,7 @@ const filters = [
   { id: "manual", label: "Manual snapshots", count: "05" },
 ];
 
-function BrandMark() {
-  return (
-    <span className="history-brand-mark" aria-hidden="true">
-      <FileText size={17} strokeWidth={2.4} />
-    </span>
-  );
-}
+// The local mark is gone; the logo comes from components/BrandMark.jsx.
 
 function VersionBadge({ type }) {
   const isManual = type === "Manual snapshot";
@@ -402,11 +397,7 @@ export default function VersionHistory() {
                 <button className="history-back-button" type="button" onClick={() => navigate('/dashboard')} aria-label="Back to documents">
                   <ArrowLeft size={15} />
                 </button>
-                <BrandMark />
-                <div className="history-brand-copy">
-                  <strong>Docu<span>Mend</span></strong>
-                  <span>PRIVATE DOCUMENT WORKSPACE</span>
-                </div>
+                <BrandMark size={31} tagline="Private document workspace" />
                 <span className="history-topbar-divider" />
 
                 {/* Document Selector Dropdown */}

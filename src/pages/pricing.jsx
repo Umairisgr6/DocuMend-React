@@ -38,6 +38,7 @@ import {
 } from '../components/WorkspaceChrome';
 
 // Navigation Helpers: Route mappings and custom client-side router
+import { BrandMark } from '../components/BrandMark';
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate, usePathname } from '../router';
@@ -112,13 +113,7 @@ const plans = [
    2. SUB-COMPONENTS
    ========================================================================== */
 
-function BrandMark() {
-  return (
-    <span className="pricing-brand-mark" aria-hidden="true">
-      <FileText size={18} strokeWidth={2.35} />
-    </span>
-  );
-}
+// The local mark is gone; the logo comes from components/BrandMark.jsx.
 
 function RepairIllustration() {
   return (
@@ -355,10 +350,7 @@ export default function Pricing() {
               <ArrowLeft size={15} />
               {backLabel}
             </button>
-            <div className="pricing-wordmark" aria-label="DocuMend">
-              <BrandMark />
-              <span>Docu<span>Mend</span></span>
-            </div>
+            <BrandMark size={29} />
             <span className="pricing-header-note">
               <LockKeyhole size={13} />
               Private by default

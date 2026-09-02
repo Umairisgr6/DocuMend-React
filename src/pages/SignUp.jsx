@@ -16,11 +16,11 @@ import {
   Check,
   Eye,
   EyeOff,
-  FileText,
   LockKeyhole,
   Sparkles,
 } from "lucide-react";
 import "./sign-up.css";
+import { BrandMark } from "../components/BrandMark";
 import { navigate } from "../router";
 
 // Blank starting values. Every input below is controlled, so each field needs
@@ -214,14 +214,7 @@ export default function SignUp() {
 
         {/* ---------- Left: branding, headline and illustration ---------- */}
         <div className="signup-story">
-          <div className="signup-brand">
-            <span className="signup-brand-mark">
-              <FileText size={17} strokeWidth={2.3} />
-            </span>
-            <span>
-              Docu<span className="signup-brand-accent">Mend</span>
-            </span>
-          </div>
+          <BrandMark size={30} className="signup-brand" />
 
           <div className="signup-story-copy">
             <div className="signup-kicker">

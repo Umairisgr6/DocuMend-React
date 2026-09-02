@@ -18,6 +18,7 @@
  */
 import { useEffect, useState } from 'react';
 import './landing-page.css';
+import { BrandMark as SharedBrandMark } from '../components/BrandMark';
 import { navigate } from '../router';
 import {
   ArrowRight,
@@ -197,16 +198,10 @@ function useParallax() {
 
 // The DocuMend logo: a square outline, a rotated diamond, and a dot. Used in
 // the header and again in the footer.
+// The geometric square-and-diamond that used to live here was the odd one out
+// across the project; the logo now comes from components/BrandMark.jsx.
 function BrandMark() {
-  return (
-    <span className="flex items-center gap-2.5" aria-label="DocuMend home">
-      <span className="relative flex h-8 w-8 items-center justify-center border border-[#d8a53c]">
-        <span className="absolute h-4 w-4 rotate-45 border border-[#d8a53c]" />
-        <span className="relative h-1.5 w-1.5 rounded-full bg-[#d8a53c]" />
-      </span>
-      <span className="font-display text-[25px] leading-none tracking-[-.03em]">DocuMend</span>
-    </span>
-  );
+  return <SharedBrandMark size={34} />;
 }
 
 /**
