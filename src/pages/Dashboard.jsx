@@ -3,7 +3,7 @@
  *
  * Integrated with the shared ThemeContext and direct quick-action navigations.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './dashboard.css';
 import {
   ArrowUpRight,
@@ -45,6 +45,11 @@ const startingDocuments = [
   { id: 5, title: 'Research_notes_final', type: 'DOCX', edited: 'Jun 05, 2024', pages: 12, status: 'Done', color: 'sky' },
   { id: 6, title: 'Opening_scene_v2', type: 'DOCX', edited: 'May 29, 2024', pages: 8, status: 'In progress', color: 'gold' },
 ];
+
+// Same limits the import screen at /upload enforces, so a file dropped on the
+// tile and a file chosen there are accepted or refused identically.
+const ACCEPTED_EXTENSIONS = /\.(pdf|docx?|txt|rtf)$/i;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 const statusClass = {
   Done: 'dash-status-done',
@@ -147,9 +152,6 @@ function DocumentRow({ doc, selected, onSelect, onOpen }) {
 function Dashboard() {
   const { darkMode, toggleDarkMode } = useTheme();
 
-  // Hidden file input reference for device file browsing
-  const fileInputRef = useRef(null);
-
   // Workspace Chrome shell states
   const [activeNav, setActiveNav] = useState('Dashboard');
   const [privacyMode, setPrivacyMode] = useState(true);
@@ -211,11 +213,6 @@ function Dashboard() {
     navigate('/CreateFolder');
   };
 
-  // 3. Upload click -> triggers native system file picker
-  const triggerFileBrowser = () => {
-    fileInputRef.current?.click();
-  };
-
   const openEditDocument = (id) => {
     const targetId = id ?? selectedId ?? documents[0]?.id;
     const target = documents.find((doc) => doc.id === targetId);
@@ -244,6 +241,18 @@ function Dashboard() {
   const handleFiles = (files) => {
     const file = files?.[0];
     if (!file) return;
+
+    // The drop path had no checks at all: any file of any size became a
+    // "document" and opened the editor. Same rules the import screen uses.
+    if (!ACCEPTED_EXTENSIONS.test(file.name)) {
+      announce('That file type is not supported. Use PDF, DOC, DOCX, TXT or RTF.');
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      announce('That file is over the 20 MB limit.');
+      return;
+    }
+
     const name = file.name.replace(/\.[^/.]+$/, '') || 'Untitled document';
     const newDocument = {
       id: Date.now(),
@@ -260,11 +269,6 @@ function Dashboard() {
     navigate('/editor');
   };
 
-  const handleFileInputChange = (event) => {
-    handleFiles(event.target.files);
-    event.target.value = '';
-  };
-
   const handleDrop = (event) => {
     event.preventDefault();
     handleFiles(event.dataTransfer.files);
@@ -277,15 +281,6 @@ function Dashboard() {
 
   return (
     <div className={`dash-shell ${darkMode ? 'dash-dark' : ''}`}>
-      {/* Hidden File Input for Native File Browser */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        hidden
-        accept=".pdf,.doc,.docx,.txt,.rtf"
-        onChange={handleFileInputChange}
-      />
-
       <MobileTopbar
         onMenu={() => setMobileSidebar(true)}
         onThemeToggle={toggleDarkMode}
@@ -348,7 +343,10 @@ function Dashboard() {
 
               <div className="dash-quick-row">
                 <QuickAction icon={Plus} title="Create document" description="Begin with a blank page" tone="gold" onClick={openNewDocument} />
-                <QuickAction icon={Upload} title="Upload / drop" description="Browse from device or drop" tone="green" onClick={triggerFileBrowser} onDrop={handleDrop} />
+                {/* Clicking opens the import screen, which validates the file and
+                    explains what is stored. Dropping straight on the tile stays
+                    the fast path and is handled here. */}
+                <QuickAction icon={Upload} title="Upload / drop" description="Bring in a document" tone="green" onClick={() => navigate('/upload')} onDrop={handleDrop} />
                 <QuickAction icon={FolderPlus} title="Create folder" description="Keep thoughts together" tone="plum" onClick={openNewFolder} />
                 <QuickAction icon={Pencil} title="Edit document" description="Continue where you left off" tone="coral" onClick={() => openEditDocument()} />
               </div>

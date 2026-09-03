@@ -23,6 +23,7 @@ import MyDocuments from './pages/MyDocuments';
 import NotFound from './pages/NotFound';
 import Pricing from './pages/Pricing';
 import SignUp from './pages/SignUp';
+import UploadDocument from './pages/UploadDocument';
 import VersionHistory from './pages/Version';
 import Features from './pages/Features';
 import Settings from './pages/Settings';
@@ -59,6 +60,7 @@ function Router() {
   if (pathname === '/settings') return <Settings />;
   if (pathname === '/help' || pathname === '/help-and-guide') return <Help />;
   if (pathname === '/storage') return <Storage />;
+  if (pathname === '/upload' || pathname === '/upload-document') return <UploadDocument />;
   if (pathname === '/share' || pathname === '/share-document') return <Share />;
   if (pathname === '/edit' || pathname === '/select-document') return <Edit />;
 
