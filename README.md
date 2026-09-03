@@ -1,32 +1,126 @@
-# DocuMend (React)
+# DocuMend
 
-The DocuMend marketing site, rebuilt with a plain HTML / CSS / JavaScript / React stack.
+A privacy-first document editor — marketing site and signed-in workspace in one
+React app. Documents are analysed on the device; nothing is uploaded.
 
-This is a faithful visual port of the original DocuMend site (originally built on Replit with
-TypeScript, Tailwind CSS, and shadcn/ui). The layout, copy, colors, and interactions are the
-same — only the underlying stack changed:
+University final-year project.
 
-- **React** (plain JavaScript, no TypeScript) for components and state
-- **Plain CSS** (`src/index.css`, `src/styles-utilities.css`) — no Tailwind, no CSS framework
-- **Vite** as the dev server / build tool
-- [`lucide-react`](https://lucide.dev/) for icons
+---
 
-`src/styles-utilities.css` holds small utility classes (`flex`, `gap-4`, `bg-[#d8a53c]`, etc.)
-that mirror the class names used in the JSX. They're hand-assembled plain CSS rules, not a
-Tailwind build — there's no build-time CSS framework dependency here.
+## Tech stack
 
-## Run it
+| | |
+|---|---|
+| **React 19** | plain JSX — no TypeScript anywhere in `src/` |
+| **Vite 8** | dev server and production build |
+| **Plain CSS** | one stylesheet per page, no CSS framework |
+| **lucide-react** | icons |
+| **oxlint** | linting |
+
+No router library, no state library, no UI kit. Routing is under 20 lines in
+[`src/router.js`](src/router.js); shared state is React context.
+
+> An earlier version of this project was built on Replit with TypeScript,
+> Tailwind and shadcn/ui. None of that remains — the stack above is the whole
+> dependency story.
+
+---
+
+## Running it
+
+Requires **Node 20+**.
 
 ```bash
 npm install
-npm run dev      # start the dev server
-npm run build    # production build
+npm run dev
 ```
 
-## Structure
+Then open **http://localhost:5173**.
 
-- `src/App.jsx` — the whole site (single-page layout, all sections)
-- `src/components/ErrorBoundary.jsx` — top-level error boundary
-- `src/pages/NotFound.jsx` — 404 fallback
-- `src/index.css` — design tokens, base reset, hand-authored component styles
-- `src/styles-utilities.css` — utility classes used throughout the JSX
+### All commands
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | start the dev server with hot reload |
+| `npm run build` | production build into `dist/` |
+| `npm run preview` | serve the built `dist/` locally |
+| `npm run lint` | run oxlint over the project |
+
+### Viewing it on a phone
+
+```bash
+npm run dev -- --host
+```
+
+Vite then prints a **Network** address (e.g. `http://192.168.1.20:5173`) — open
+that on a phone connected to the same Wi-Fi. Without `--host` it binds locally
+only and the phone cannot reach it. That address comes from your router, so it
+changes when you reconnect; if the page stops loading, re-read the address Vite
+prints.
+
+### On Windows, if `npm` is not found
+
+Node may be installed but missing from `PATH`. In PowerShell:
+
+```powershell
+$env:Path = "C:\Program Files\nodejs;" + $env:Path
+npm run dev
+```
+
+### If a page looks stale or wrong
+
+Another project may already hold the port, in which case Vite quietly moves to
+the next one — check the address it actually printed, not the one you expected.
+
+---
+
+## Project structure
+
+```
+src/
+├── App.jsx                  route table
+├── main.jsx                 entry point
+├── router.js                navigate() + usePathname()
+├── index.css                design tokens, reset, fonts
+├── styles-utilities.css     vendored utility classes (see note below)
+├── components/
+│   ├── BrandMark.jsx        the logo, used everywhere
+│   ├── WorkspaceChrome.jsx  sidebar, header, drawer, modal
+│   ├── workspace-nav.js     sidebar navigation data
+│   ├── ThemeContext.jsx     dark mode, persisted to localStorage
+│   ├── ErrorBoundary.jsx
+│   └── Reveal.jsx           scroll-in animation
+└── pages/                   one component + one stylesheet each
+```
+
+**Conventions:** components are `PascalCase.jsx`, stylesheets are
+`kebab-case.css`, and every page's CSS classes carry a page-specific prefix
+(`dash-`, `editor-`, `folder-`) so no two stylesheets can collide.
+
+**`styles-utilities.css` is a frozen, pre-compiled Tailwind subset** — not a
+live Tailwind build. A utility class that is not already in that file does
+nothing at all, with no build error. Write real CSS instead.
+
+---
+
+## Pages
+
+**Public** — landing page, sign up, log in, password reset, pricing.
+
+**Workspace** — dashboard, my documents, editor, version history, features,
+settings, storage, share, help, plus setup screens for creating a document and
+a folder.
+
+Every page shares the same sidebar and header from `WorkspaceChrome`, and
+follows the dark-mode setting from `ThemeContext`.
+
+---
+
+## Status
+
+Front-end only. There is no backend yet, so sign-in, import progress and
+password reset are simulated in the browser, and **nothing persists across a
+reload** except the import screen's recent-documents list.
+
+Project conventions, architecture notes and known open issues are kept in
+[CLAUDE.md](CLAUDE.md).
