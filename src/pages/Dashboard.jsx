@@ -32,19 +32,27 @@ import {
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { createDocument, listDocuments, updateDocument } from '../storage/documents';
+import { countWords, formatModified, pageLabel, pagesFor } from '../storage/format';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
-const startingDocuments = [
-  { id: 1, title: 'Thesis_Chapter_3', type: 'DOCX', edited: 'Today, 9:42 AM', pages: 20, status: 'In progress', color: 'saffron' },
-  { id: 2, title: 'FYP_phase_01', type: 'PDF', edited: 'Yesterday, 4:18 PM', pages: 30, status: 'Done', color: 'sage' },
-  { id: 3, title: 'Methodology_section', type: 'DOCX', edited: 'Jun 14, 2024', pages: 47, status: 'In progress', color: 'coral' },
-  { id: 4, title: 'Annual_Report_2024', type: 'PDF', edited: 'Jun 11, 2024', pages: 50, status: 'Backlog', color: 'lavender' },
-  { id: 5, title: 'Research_notes_final', type: 'DOCX', edited: 'Jun 05, 2024', pages: 12, status: 'Done', color: 'sky' },
-  { id: 6, title: 'Opening_scene_v2', type: 'DOCX', edited: 'May 29, 2024', pages: 8, status: 'In progress', color: 'gold' },
-];
+/** Shapes a stored document record into what DocumentRow draws. */
+function toRow(doc) {
+  const edited = formatModified(doc.updatedAt);
+  return {
+    id: doc.id,
+    title: doc.title,
+    type: doc.format ?? 'DOCX',
+    edited: edited.charAt(0).toUpperCase() + edited.slice(1),
+    pages: pagesFor(doc.wordCount),
+    status: doc.status === 'done' ? 'Done' : 'In progress',
+    color: doc.tint ?? 'gold',
+  };
+}
 
 // Same limits the import screen at /upload enforces, so a file dropped on the
 // tile and a file chosen there are accepted or refused identically.
@@ -128,7 +136,7 @@ function DocumentRow({ doc, selected, onSelect, onOpen }) {
         <span className={`dash-glyph dash-glyph-${doc.color}`}><FileText size={17} strokeWidth={2} /></span>
         <div style={{ minWidth: 0 }}>
           <p className="dash-row-title">{doc.title}</p>
-          <p className="dash-row-meta">Edited {doc.edited} · {doc.pages} pages</p>
+          <p className="dash-row-meta">Edited {doc.edited} · {pageLabel(doc.pages)}</p>
         </div>
       </div>
       <div className="dash-row-side">
@@ -158,11 +166,13 @@ function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [search, setSearch] = useState('');
-  const [documents, setDocuments] = useState(startingDocuments);
-  const [selectedId, setSelectedId] = useState(1);
+  // Live list from IndexedDB, newest first.
+  const storedDocuments = useLiveQuery(listDocuments, []);
+  const loading = storedDocuments === undefined;
+  const documents = useMemo(() => (storedDocuments ?? []).map(toRow), [storedDocuments]);
+  const [selectedId, setSelectedId] = useState(null);
   const [modal, setModal] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [draftValue, setDraftValue] = useState('');
+  const [draftValue] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -213,37 +223,41 @@ function Dashboard() {
     navigate('/CreateFolder');
   };
 
+  // With an id: open that document. Without one: the "pick a document" screen.
   const openEditDocument = (id) => {
-    const targetId = id ?? selectedId ?? documents[0]?.id;
-    const target = documents.find((doc) => doc.id === targetId);
-    if (!target) return;
-    setSelectedId(target.id);
+    if (id) {
+      navigate(`/editor?doc=${id}`);
+      return;
+    }
     navigate('/Edit');
   };
 
-  const submitModal = (value) => {
-    if (editingId) {
-      setDocuments((current) => current.map((doc) => (
-        doc.id === editingId ? { ...doc, title: value, edited: 'Just now' } : doc
-      )));
-      announce('Document name updated');
-      navigate('/editor');
-    } else {
-      const newDocument = { id: Date.now(), title: value, type: 'DOCX', edited: 'Just now', pages: 1, status: 'In progress', color: 'gold' };
-      setDocuments((current) => [newDocument, ...current]);
-      setSelectedId(newDocument.id);
-      announce('New document created');
-      navigate('/editor');
+  const submitModal = async (value) => {
+    const title = value.trim();
+    if (!title) return;
+    try {
+      const doc = await createDocument({ title });
+      setModal(null);
+      navigate(`/editor?doc=${doc.id}`);
+    } catch (error) {
+      console.error(error);
+      announce('The document could not be saved. Check that your browser allows site storage, then try again.');
     }
-    setModal(null);
   };
 
-  const handleFiles = (files) => {
+  /** Plain text becomes paragraphs; PDF/DOCX text import arrives with the Tiptap editor (S2). */
+  const textToHtml = (text) => text
+    .split(/\r?\n\s*\r?\n/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => `<p>${block.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>')}</p>`)
+    .join('');
+
+  const handleFiles = async (files) => {
     const file = files?.[0];
     if (!file) return;
 
-    // The drop path had no checks at all: any file of any size became a
-    // "document" and opened the editor. Same rules the import screen uses.
+    // Same rules the import screen uses.
     if (!ACCEPTED_EXTENSIONS.test(file.name)) {
       announce('That file type is not supported. Use PDF, DOC, DOCX, TXT or RTF.');
       return;
@@ -253,20 +267,19 @@ function Dashboard() {
       return;
     }
 
-    const name = file.name.replace(/\.[^/.]+$/, '') || 'Untitled document';
-    const newDocument = {
-      id: Date.now(),
-      title: name,
-      type: file.name.split('.').pop()?.toUpperCase() ?? 'DOC',
-      edited: 'Just now',
-      pages: 1,
-      status: 'In progress',
-      color: 'sky',
-    };
-    setDocuments((current) => [newDocument, ...current]);
-    setSelectedId(newDocument.id);
-    announce(`${file.name} uploaded`);
-    navigate('/editor');
+    const title = file.name.replace(/\.[^/.]+$/, '') || 'Untitled document';
+    const extension = file.name.split('.').pop()?.toUpperCase() ?? 'DOC';
+    try {
+      const doc = await createDocument({ title });
+      const isText = extension === 'TXT';
+      const text = isText ? await file.text() : '';
+      await updateDocument(doc.id, { format: extension, content: textToHtml(text), wordCount: countWords(text) });
+      announce(isText ? `${file.name} imported` : `${file.name} added. Text import for ${extension} files is coming soon.`);
+      navigate(`/editor?doc=${doc.id}`);
+    } catch (error) {
+      console.error(error);
+      announce('The file could not be saved. Check that your browser allows site storage, then try again.');
+    }
   };
 
   const handleDrop = (event) => {
@@ -381,7 +394,13 @@ function Dashboard() {
               </div>
             </div>
 
-            {filteredDocuments.length > 0 ? (
+            {loading ? null : documents.length === 0 ? (
+              <div className="dash-empty">
+                <FileText size={22} />
+                <p>No documents yet. Create one, or drop a .txt file on "Upload / drop".</p>
+                <button type="button" onClick={openNewDocument}>Create a document</button>
+              </div>
+            ) : filteredDocuments.length > 0 ? (
               <div className="dash-rows">
                 {filteredDocuments.map((doc) => (
                   <DocumentRow

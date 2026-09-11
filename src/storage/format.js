@@ -19,3 +19,25 @@ export function formatModified(ms) {
     .toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
     .toLowerCase();
 }
+
+/** "1 page" · "12 pages" */
+export function pageLabel(count) {
+  const n = Math.max(1, count || 1);
+  return `${n} ${n === 1 ? 'page' : 'pages'}`;
+}
+
+/** About 500 words to a printed page. */
+export function pagesFor(wordCount) {
+  return Math.max(1, Math.ceil((wordCount || 0) / 500));
+}
+
+/** "07:42:05" — the time format FR-03-02-03 asks for. */
+export function clockTime(ms) {
+  return new Date(ms).toLocaleTimeString('en-GB', { hour12: false });
+}
+
+/** Words in a block of plain text. */
+export function countWords(text) {
+  const words = (text || '').trim().match(/\S+/g);
+  return words ? words.length : 0;
+}

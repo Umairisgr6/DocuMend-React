@@ -17,15 +17,17 @@
  * of an editor dependency. If this ever needs collaborative editing or a
  * reliable undo stack, that is the point to reach for a real editor engine.
  *
- * Front-end only: the document list, issues, and word counts are fixtures,
- * and edits are not persisted. Autosave is simulated by a timer.
+ * Documents are loaded from and saved to IndexedDB (src/storage). The page
+ * reads ?doc=<id> from the URL; typing is written back every 5 seconds, and
+ * again when you switch documents, press Ctrl+S, or leave the page.
+ * The review panel's issues are still sample data until the engine (S6).
  */
 /**
  * Editor — the writing surface, served at the `/editor` route.
  *
  * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './editor.css';
 import {
   AlertTriangle,
@@ -103,31 +105,35 @@ import {
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import {
+  createDocument as saveNewDocument,
+  getDocument,
+  listDocuments,
+  updateDocument,
+} from '../storage/documents';
+import { clockTime, countWords, pageLabel, pagesFor } from '../storage/format';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
-const startingDocuments = [
-  { id: 1, title: 'FYP Phase 1 Report', type: 'DOCX', pages: 20, color: 'saffron' },
-  { id: 2, title: 'Research Proposal v3', type: 'PDF', pages: 30, color: 'sage' },
-  { id: 3, title: 'NDA-DataRopes.ai', type: 'DOCX', pages: 47, color: 'coral' },
-  { id: 4, title: 'Literature Review Draft', type: 'PDF', pages: 50, color: 'lavender' },
-  { id: 5, title: 'Research_notes_final', type: 'DOCX', pages: 12, color: 'sky' },
-];
+const AUTOSAVE_MS = 5000;
+const EMPTY_DOCUMENT = '<p><br></p>';
 
-const initialContent = `
-    <p class="editor-eyebrow">FYP Phase 1 — DocuMend</p>
-    <p class="editor-subtitle">A focused workspace for better writing, clearer thinking, and confident citations.</p>
-    <h2>1. Introduction</h2>
-    <p>The rapid growth of digital documentation in academic and legal environments has created a growing need for intelligent, non-invasive editing tools that respect the writer's voice. DocuMend combines contextual review with a calm writing surface, helping authors discover <span class="editor-heatmap-mark heatmap-contradiction" title="Possible contradiction detected">contradictions</span>, <span class="editor-heatmap-mark heatmap-structure" title="Structure gap detected">structural gaps</span>, and citation issues before they become difficult to untangle.</p>
-    <p>Rather than interrupting the writing process, the system keeps suggestions close at hand. Each recommendation is grounded in the document itself, so the author can decide what to change and what to keep.</p>
-    <h2>2. Literature Review</h2>
-    <p>Prior work in automated document analysis has largely relied on cloud-based language models. The project budget is listed as <span class="editor-heatmap-mark heatmap-contradiction" title="Contradiction: budget is listed differently in another paragraph">PKR 45,000</span> here, while the implementation estimate records <span class="editor-heatmap-mark heatmap-contradiction" title="Contradiction: budget is listed differently in another paragraph">PKR 32,000</span>. Tools such as Grammarly and Whiteful provide grammar and style suggestions but require continued connectivity. This creates a practical challenge for researchers working with sensitive material.</p>
-    <p>Research in trust and authorship focuses on explaining decisions rather than replacing the writer. A useful editor should reveal patterns, preserve context, and make the final decision feel deliberate.</p>
-    <h2>3. Methodology</h2>
-    <p>DocuMend's architecture is divided into three primary modules: the Document Parser, the Analysis Engine, and the Suggestion Interface. The parser extracts structure and content, while the analysis engine identifies patterns across the document. The <span class="editor-heatmap-mark heatmap-citation" title="Citation needed for this technical claim">WASM proxy</span> keeps sensitive text local, although the <span class="editor-heatmap-mark heatmap-redundancy" title="Redundant phrase: already used in the abstract">60 fps editing</span> claim should be cross-referenced.</p>
-  `;
+/** Rough plain text from saved HTML, for the word count. */
+function htmlToText(html) {
+  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ');
+}
+
+/** The ?doc=<id> the page was opened with, if any. */
+function docIdFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get('doc');
+  } catch {
+    return null;
+  }
+}
 
 const modeTabs = ['Home', 'Insert', 'Layout', 'References', 'Review', 'View', 'AI Tools'];
 
@@ -173,8 +179,19 @@ function Editor() {
   const [toast, setToast] = useState('');
 
   // --- editor state ---
-  const [documents, setDocuments] = useState(startingDocuments);
-  const [selectedId, setSelectedId] = useState(1);
+  // Live document list from IndexedDB, newest first.
+  const storedDocuments = useLiveQuery(listDocuments, []);
+  const documents = (storedDocuments ?? []).map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    type: doc.format ?? 'DOCX',
+    pages: pagesFor(doc.wordCount),
+    color: doc.tint ?? 'gold',
+  }));
+  const noDocuments = storedDocuments !== undefined && storedDocuments.length === 0;
+  const [selectedId, setSelectedId] = useState(docIdFromUrl);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [wordCount, setWordCount] = useState(0);
   const [reviewTab, setReviewTab] = useState('Issues');
   const [isSaved, setIsSaved] = useState(true);
   const [zoom, setZoom] = useState(100);
@@ -194,11 +211,12 @@ function Editor() {
   const [findMatches, setFindMatches] = useState(0);
 
   const editorRef = useRef(null);
-  const saveTimerRef = useRef(null);
+  const loadedIdRef = useRef(null); // the document currently shown in the editor
+  const pendingRef = useRef(null); // { id, html } typed but not yet written
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
-  const currentDocument = documents.find((doc) => doc.id === selectedId) ?? documents[0];
+  const currentDocument = documents.find((doc) => doc.id === selectedId) ?? null;
 
   const announce = (message) => setToast(message);
 
@@ -208,16 +226,64 @@ function Editor() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  useEffect(() => {
-    if (editorRef.current && !editorRef.current.dataset.ready) {
-      editorRef.current.innerHTML = initialContent;
-      editorRef.current.dataset.ready = 'true';
+  /** Writes whatever was typed since the last save. Safe to call at any time. */
+  const saveNow = useCallback(async () => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+    pendingRef.current = null;
+    const words = countWords(htmlToText(pending.html));
+    try {
+      await updateDocument(pending.id, { content: pending.html, wordCount: words });
+      if (loadedIdRef.current === pending.id) {
+        setLastSavedAt(Date.now());
+        setWordCount(words);
+      }
+      if (!pendingRef.current) setIsSaved(true);
+    } catch (error) {
+      console.error(error);
+      if (!pendingRef.current) pendingRef.current = pending; // retry on the next tick
+      setToast('Auto-save failed. Your text is still on screen; check that the browser allows site storage.');
     }
   }, []);
 
-  useEffect(() => () => {
-    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-  }, []);
+  // No document chosen yet: open the most recent one.
+  useEffect(() => {
+    if (!selectedId && storedDocuments?.length) setSelectedId(storedDocuments[0].id);
+  }, [selectedId, storedDocuments]);
+
+  // Load the chosen document into the editor and keep its id in the URL.
+  useEffect(() => {
+    if (!selectedId) return undefined;
+    let cancelled = false;
+    getDocument(selectedId).then((doc) => {
+      if (cancelled || !editorRef.current) return;
+      if (!doc) {
+        setSelectedId(null); // deleted or a bad link: fall back to the latest document
+        return;
+      }
+      editorRef.current.innerHTML = doc.content || EMPTY_DOCUMENT;
+      loadedIdRef.current = doc.id;
+      setIsSaved(true);
+      setLastSavedAt(doc.updatedAt);
+      setWordCount(doc.wordCount ?? 0);
+      window.history.replaceState({}, '', `/editor?doc=${doc.id}`);
+    });
+    return () => { cancelled = true; };
+  }, [selectedId]);
+
+  // Auto-save every 5 seconds (FR-03-02-02), and when the tab is hidden or the page is left.
+  useEffect(() => {
+    const timer = window.setInterval(saveNow, AUTOSAVE_MS);
+    const onHide = () => { if (window.document.visibilityState === 'hidden') saveNow(); };
+    window.addEventListener('pagehide', saveNow);
+    window.document.addEventListener('visibilitychange', onHide);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('pagehide', saveNow);
+      window.document.removeEventListener('visibilitychange', onHide);
+      saveNow();
+    };
+  }, [saveNow]);
 
   useEffect(() => {
     const handleShortcut = (event) => {
@@ -225,8 +291,7 @@ function Editor() {
       const key = event.key.toLowerCase();
       if (key === 's') {
         event.preventDefault();
-        setIsSaved(true);
-        announce('Document saved');
+        saveNow().then(() => setToast('Document saved'));
       }
       if (key === 'f') {
         event.preventDefault();
@@ -235,7 +300,7 @@ function Editor() {
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, []);
+  }, [saveNow]);
 
   useEffect(() => {
     if (!showFileMenu) return;
@@ -251,10 +316,11 @@ function Editor() {
     };
   }, [showFileMenu]);
 
+  // Remember the latest text; the 5-second timer writes it.
   const markUnsaved = () => {
+    if (!loadedIdRef.current || !editorRef.current) return;
+    pendingRef.current = { id: loadedIdRef.current, html: editorRef.current.innerHTML };
     setIsSaved(false);
-    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = window.setTimeout(() => setIsSaved(true), 1000);
   };
 
   const runCommand = (command, value) => {
@@ -303,22 +369,28 @@ function Editor() {
     announce(resolution === 'fixed' ? `${kind} fixed` : `${kind} ignored`);
   };
 
-  const changeDocument = (id) => {
+  const changeDocument = async (id) => {
+    if (id === selectedId) return;
+    await saveNow(); // finish the current document before switching
     setSelectedId(id);
-    if (editorRef.current) {
-      editorRef.current.innerHTML = initialContent;
-      editorRef.current.dataset.ready = 'true';
-    }
-    setIsSaved(true);
-    announce('Document loaded in editor');
   };
 
-  const createDocument = (title) => {
-    const newDocument = { id: Date.now(), title, type: 'DOCX', pages: 1, color: 'gold' };
-    setDocuments((current) => [newDocument, ...current]);
-    setSelectedId(newDocument.id);
-    setModal(null);
-    announce('New document created');
+  const createDocument = async (title) => {
+    const clean = title.trim();
+    if (!clean) return;
+    try {
+      const doc = await saveNewDocument({ title: clean });
+      setModal(null);
+      await changeDocument(doc.id);
+      announce('New document created');
+    } catch (error) {
+      console.error(error);
+      announce('The document could not be saved. Check that your browser allows site storage, then try again.');
+    }
+  };
+
+  const saveAndAnnounce = (message) => {
+    saveNow().then(() => announce(message));
   };
 
   const selectNav = (label) => {
@@ -397,7 +469,7 @@ function Editor() {
                   <p className="editor-brandline">DocuMend <span>· private writing studio</span></p>
                   <label className="editor-document-select">
                     <span className="dash-sr">Choose document</span>
-                    <select value={currentDocument?.id ?? ''} onChange={(event) => changeDocument(Number(event.target.value))}>
+                    <select value={currentDocument?.id ?? ''} disabled={noDocuments} onChange={(event) => changeDocument(event.target.value)}>
                       {documents.map((doc) => <option key={doc.id} value={doc.id}>{doc.title}</option>)}
                     </select>
                     <ChevronDown size={13} />
@@ -420,7 +492,7 @@ function Editor() {
               <div className="editor-topbar-actions">
                 <button type="button" className="editor-top-action" onClick={() => announce('Document exported as DOCX')}><Printer size={15} /><span className="editor-hide-sm">Export</span></button>
                 <button type="button" className="editor-top-action editor-share-action" onClick={() => navigate('/share')}><Share2 size={14} /><span className="editor-hide-sm">Share</span></button>
-                <button type="button" className="editor-save-button" onClick={() => { setIsSaved(true); announce('Document saved'); }}><Check size={15} /> Save</button>
+                <button type="button" className="editor-save-button" onClick={() => saveAndAnnounce('Document saved')}><Check size={15} /> Save</button>
                 <span className="editor-avatar">MA</span>
               </div>
             </div>
@@ -445,8 +517,8 @@ function Editor() {
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); folderInputRef.current?.click(); }}><FolderOpen size={14} /><span>Open folder…</span></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate('/documents'); }}><Files size={14} /><span>Open recent</span></button>
                       <div className="editor-file-menu-divider" />
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); setIsSaved(true); announce('Document saved'); }}><Save size={14} /><span>Save</span><kbd>Ctrl S</kbd></button>
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); setIsSaved(true); announce('Document saved as a new copy'); }}><Copy size={14} /><span>Save as…</span><kbd>Ctrl Shift S</kbd></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); saveAndAnnounce('Document saved'); }}><Save size={14} /><span>Save</span><kbd>Ctrl S</kbd></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); saveAndAnnounce('Document saved'); }}><Copy size={14} /><span>Save as…</span><kbd>Ctrl Shift S</kbd></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('A copy of this document is ready'); }}><FilePlus2 size={14} /><span>Make a copy</span></button>
                       <div className="editor-file-menu-divider" />
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('Document exported as PDF'); }}><Printer size={14} /><span>Export as PDF</span></button>
@@ -743,7 +815,7 @@ function Editor() {
                 <button type="button" className="editor-command-button command-suggest" onClick={() => announce('Suggestions generated')}><Sparkles size={14} /> Suggest</button>
                 <button type="button" className="editor-command-button command-more" onClick={() => setModal('document')}><Plus size={14} /> New document</button>
               </div>
-              <span className="editor-page-count">{currentDocument?.pages ?? 1} pages · {currentDocument?.type ?? 'DOCX'}</span>
+              <span className="editor-page-count">{pageLabel(currentDocument?.pages)} · {currentDocument?.type ?? 'DOCX'}</span>
             </div>
 
             {/* Navigator | canvas | review */}
@@ -784,7 +856,7 @@ function Editor() {
                       onClick={() => changeDocument(doc.id)}
                     >
                       <span className={`editor-document-thumb thumb-${doc.color}`}><FileText size={14} /></span>
-                      <span className="editor-document-item-copy"><strong>{doc.title}</strong><small>{doc.type} · {doc.pages} pages</small></span>
+                      <span className="editor-document-item-copy"><strong>{doc.title}</strong><small>{doc.type} · {pageLabel(doc.pages)}</small></span>
                       {doc.id === currentDocument?.id && <span className="editor-document-live" />}
                     </button>
                   ))}
@@ -808,7 +880,7 @@ function Editor() {
 
               <section className="editor-canvas-shell">
                 <div className="editor-canvas-toolbar">
-                  <span className="editor-canvas-label"><FileCheck2 size={14} /> Editing <strong>{currentDocument?.title}</strong></span>
+                  <span className="editor-canvas-label"><FileCheck2 size={14} /> Editing <strong>{currentDocument?.title ?? '—'}</strong></span>
                   <div className="editor-heatmap-bar">
                     <span className="editor-heatmap-title"><AlertTriangle size={12} /> Heatmap</span>
                     <span className="editor-heatmap-legend">
@@ -837,9 +909,15 @@ function Editor() {
                 </div>
 
                 <div className="editor-paper-wrap">
+                  {noDocuments && (
+                    <div className="editor-empty-note" role="status">
+                      <p>You have no documents yet.</p>
+                      <button type="button" onClick={() => setModal('document')}><Plus size={14} /> Create a document</button>
+                    </div>
+                  )}
                   <article
                     ref={editorRef}
-                    contentEditable
+                    contentEditable={Boolean(currentDocument)}
                     suppressContentEditableWarning
                     onInput={markUnsaved}
                     className={`editor-paper ${pageLayout === 'wide' ? 'is-wide' : ''} ${heatmapEnabled ? '' : 'heatmap-muted'}`}
@@ -849,9 +927,9 @@ function Editor() {
                 </div>
 
                 <div className="editor-canvas-footer">
-                  <span>Word count <strong>1,284</strong></span>
-                  <span>Last edited just now</span>
-                  <span className="editor-autosave"><Check size={13} /> Local autosave on</span>
+                  <span>Word count <strong>{wordCount.toLocaleString()}</strong></span>
+                  <span>{lastSavedAt ? `Last Saved: ${clockTime(lastSavedAt)}` : 'Not saved yet'}</span>
+                  <span className="editor-autosave"><Check size={13} /> Auto-save every 5 s</span>
                 </div>
               </section>
 
@@ -946,8 +1024,8 @@ function Editor() {
                     <p className="editor-insight-kicker">Writing signals</p>
                     <h3>Steady, focused progress</h3>
                     <div className="editor-stat-grid">
-                      <div><strong>1,284</strong><span>Words</span></div>
-                      <div><strong>08:42</strong><span>Read time</span></div>
+                      <div><strong>{wordCount.toLocaleString()}</strong><span>Words</span></div>
+                      <div><strong>{Math.max(1, Math.ceil(wordCount / 200))} min</strong><span>Read time</span></div>
                       <div><strong>71%</strong><span>Complete</span></div>
                       <div><strong>8.4</strong><span>Clarity</span></div>
                     </div>

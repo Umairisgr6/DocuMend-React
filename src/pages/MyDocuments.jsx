@@ -43,7 +43,7 @@ import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createDocument, listDocuments } from '../storage/documents';
-import { formatModified } from '../storage/format';
+import { formatModified, pageLabel, pagesFor } from '../storage/format';
 
 /* ==========================================================================
    Content data
@@ -59,7 +59,7 @@ function toCard(doc) {
     ...doc,
     type: doc.format ?? 'DOCX',
     modified: formatModified(doc.updatedAt),
-    pages: Math.max(1, Math.ceil((doc.wordCount ?? 0) / 500)),
+    pages: pagesFor(doc.wordCount),
     tags: doc.tags ?? [{ label: doc.type, tone: 'info' }],
   };
 }
@@ -80,7 +80,7 @@ function DocumentCard({ doc, onOpen }) {
       </span>
       <span className="docs-card-body">
         <span className="docs-card-title dash-serif">{doc.title}</span>
-        <span className="docs-card-meta">Modified {doc.modified} · {doc.pages} pages</span>
+        <span className="docs-card-meta">Modified {doc.modified} · {pageLabel(doc.pages)}</span>
         <span className="docs-tags">
           {doc.tags.map((tag) => (
             <span key={tag.label} className={`docs-tag docs-tag-${tag.tone}`}>{tag.label}</span>

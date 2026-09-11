@@ -1825,3 +1825,32 @@
   .editor-hide-sm { display: inline; }
   .editor-autosave { display: inline-flex; }
 }
+
+/* Shown on the paper when the library is empty */
+.editor-empty-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px dashed currentColor;
+  opacity: .85;
+}
+.editor-empty-note p { margin: 0; }
+.editor-empty-note button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #d8a53c;
+  color: #172d26;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
