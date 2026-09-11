@@ -41,17 +41,13 @@ import {
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { createDocument as saveNewDocument } from '../storage/documents';
+import { listFolderOptions, ROOT_FOLDER } from '../storage/folders';
 
 const MAX_NAME = 64;
 
 const TYPES = ['Thesis', 'Research paper', 'Legal', 'Report', 'Other'];
-
-const FOLDERS = [
-  { id: 'php', name: 'PHP Docs', meta: '4 files' },
-  { id: 'legal', name: 'Legal drafts', meta: '2 files' },
-  { id: 'research', name: 'Research', meta: '1 file' },
-  { id: 'root', name: 'Root level', meta: 'Main directory' },
-];
 
 const ANALYSES = [
   { id: 'grammar', label: 'Grammar', hint: 'Style + syntax pass' },
@@ -86,16 +82,20 @@ export default function CreateDocument() {
   const [name, setName] = useState(nameFromUrl);
   const [type, setType] = useState('Thesis');
   const [query, setQuery] = useState('');
-  const [folder, setFolder] = useState('php');
+  const [folder, setFolder] = useState('root');
+  const [saving, setSaving] = useState(false);
+
+  // Real folders from IndexedDB; re-renders on its own when a folder is added.
+  const folderOptions = useLiveQuery(listFolderOptions, []) ?? [ROOT_FOLDER];
   const [checks, setChecks] = useState(['grammar', 'contradiction']);
 
   const trimmedName = name.trim();
-  const folderLabel = FOLDERS.find((item) => item.id === folder)?.name ?? 'Root level';
+  const folderLabel = folderOptions.find((item) => item.id === folder)?.name ?? 'Root level';
 
   const visibleFolders = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return FOLDERS.filter((item) => item.name.toLowerCase().includes(needle));
-  }, [query]);
+    return folderOptions.filter((item) => item.name.toLowerCase().includes(needle));
+  }, [query, folderOptions]);
 
   const announce = (message) => {
     setToast(message);
@@ -129,9 +129,17 @@ export default function CreateDocument() {
     ));
   };
 
-  const createDocument = () => {
-    if (!trimmedName) return;
-    navigate('/editor');
+  const createDocument = async () => {
+    if (!trimmedName || saving) return;
+    setSaving(true);
+    try {
+      const doc = await saveNewDocument({ title: trimmedName, type, folderId: folder, checks });
+      navigate(`/editor?doc=${doc.id}`);
+    } catch (error) {
+      console.error(error);
+      announce('The document could not be saved. Check that your browser allows site storage, then try again.');
+      setSaving(false);
+    }
   };
 
   return (
@@ -314,7 +322,7 @@ export default function CreateDocument() {
                 <button
                   type="button"
                   className="newdoc-primary"
-                  disabled={!trimmedName}
+                  disabled={!trimmedName || saving}
                   onClick={createDocument}
                 >
                   <Plus size={15} strokeWidth={2.6} /> Create document

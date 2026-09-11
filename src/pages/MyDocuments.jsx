@@ -12,9 +12,8 @@
  * tiles, and a card grid of documents (colour-tinted preview, title, meta,
  * tag chips).
  *
- * Front-end only: documents live in component state and reset on reload.
- * Swap `startingDocuments` and the handlers for API calls when a backend
- * exists.
+ * Documents come from IndexedDB through src/storage/documents.js, so they
+ * survive a reload. useLiveQuery re-renders the grid when a record changes.
  */
 /**
  * MyDocuments — the private library, served at the `/documents` route.
@@ -42,6 +41,9 @@ import {
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { createDocument, listDocuments } from '../storage/documents';
+import { formatModified } from '../storage/format';
 
 /* ==========================================================================
    Content data
@@ -51,45 +53,16 @@ const tabs = ['Home', 'Insert', 'References', 'AI Tools'];
 
 const categories = ['All', 'Academic', 'Legal', 'Researcher', 'Corporate', 'Draft'];
 
-const startingDocuments = [
-  {
-    id: 1, title: 'FYP Phase 1 Report', type: 'DOCX', modified: 'today, 9:42 am', pages: 20,
-    tint: 'saffron', category: 'Academic',
-    tags: [{ label: '2 contradictions', tone: 'issue' }, { label: '1 gap', tone: 'warn' }],
-  },
-  {
-    id: 2, title: 'Research Proposal v3', type: 'PDF', modified: 'yesterday, 4:18 pm', pages: 30,
-    tint: 'sage', category: 'Researcher',
-    tags: [{ label: 'Clean', tone: 'good' }, { label: 'APA', tone: 'info' }],
-  },
-  {
-    id: 3, title: 'NDA-DataRopes.ai', type: 'DOCX', modified: 'jun 14, 2024', pages: 47,
-    tint: 'coral', category: 'Legal',
-    tags: [{ label: 'Legal', tone: 'info' }, { label: 'Verified', tone: 'good' }],
-  },
-  {
-    id: 4, title: 'Literature Review Draft', type: 'PDF', modified: 'jun 11, 2024', pages: 50,
-    tint: 'lavender', category: 'Academic',
-    tags: [{ label: 'Self plagiarism', tone: 'warn' }],
-  },
-  {
-    id: 5, title: 'Research_notes_final', type: 'DOCX', modified: 'jun 05, 2024', pages: 12,
-    tint: 'sky', category: 'Researcher',
-    tags: [{ label: 'Done', tone: 'good' }],
-  },
-  {
-    id: 6, title: 'Opening_scene_v2', type: 'DOCX', modified: 'may 29, 2024', pages: 8,
-    tint: 'gold', category: 'Draft',
-    tags: [{ label: 'In progress', tone: 'warn' }],
-  },
-];
-
-const stats = [
-  { icon: FileText, value: '12', label: 'Total Documents', tone: 'cream' },
-  { icon: Pencil, value: '3', label: 'Drafts in progress', tone: 'lavender' },
-  { icon: TriangleAlert, value: '7', label: 'Issues found', tone: 'peach' },
-  { icon: LockKeyhole, value: 'AES-256', label: 'All docs encrypted', tone: 'sky' },
-];
+/** Shapes a stored document record into what DocumentCard draws. */
+function toCard(doc) {
+  return {
+    ...doc,
+    type: doc.format ?? 'DOCX',
+    modified: formatModified(doc.updatedAt),
+    pages: Math.max(1, Math.ceil((doc.wordCount ?? 0) / 500)),
+    tags: doc.tags ?? [{ label: doc.type, tone: 'info' }],
+  };
+}
 
 /* ==========================================================================
    Pieces
@@ -132,7 +105,18 @@ function MyDocuments() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [search, setSearch] = useState('');
-  const [documents, setDocuments] = useState(startingDocuments);
+  // Live list from IndexedDB: updates by itself when a document is added or changed.
+  const storedDocuments = useLiveQuery(listDocuments, []);
+  const loading = storedDocuments === undefined;
+  const documents = useMemo(() => (storedDocuments ?? []).map(toCard), [storedDocuments]);
+
+  const stats = [
+    { icon: FileText, value: String(documents.length), label: 'Total Documents', tone: 'cream' },
+    { icon: Pencil, value: String(documents.filter((doc) => doc.status === 'draft').length), label: 'Drafts in progress', tone: 'lavender' },
+    { icon: TriangleAlert, value: String(documents.reduce((sum, doc) => sum + (doc.issueCount ?? 0), 0)), label: 'Issues found', tone: 'peach' },
+    // Switches to "AES-256 · All docs encrypted" once section S3 (encryption) is done.
+    { icon: LockKeyhole, value: 'Local', label: 'Stored on this device', tone: 'sky' },
+  ];
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState('');
 
@@ -180,20 +164,17 @@ function MyDocuments() {
     if (tab !== 'Home') announce(`${tab} view selected`);
   };
 
-  const submitModal = (value) => {
-    const newDocument = {
-      id: Date.now(),
-      title: value,
-      type: 'DOCX',
-      modified: 'just now',
-      pages: 1,
-      tint: 'gold',
-      category: 'Draft',
-      tags: [{ label: 'In progress', tone: 'warn' }],
-    };
-    setDocuments((current) => [newDocument, ...current]);
-    setModal(null);
-    announce('New document created');
+  const submitModal = async (value) => {
+    const title = value.trim();
+    if (!title) return;
+    try {
+      await createDocument({ title, type: 'Other' });
+      setModal(null);
+      announce('New document created');
+    } catch (error) {
+      console.error(error);
+      announce('The document could not be saved. Check that your browser allows site storage, then try again.');
+    }
   };
 
   const handleLogout = () => {
@@ -319,9 +300,17 @@ function MyDocuments() {
                 <DocumentCard
                   key={doc.id}
                   doc={doc}
-                  onOpen={() => navigate('/editor')}
+                  onOpen={() => navigate(`/editor?doc=${doc.id}`)}
                 />
               ))}
+            </div>
+          ) : loading ? null : documents.length === 0 ? (
+            <div className="docs-empty dash-rise dash-d4">
+              <FileText size={22} />
+              <p>No documents yet. Create one and it stays here, even after you reload.</p>
+              <button type="button" onClick={() => setModal('document')}>
+                Create your first document
+              </button>
             </div>
           ) : (
             <div className="docs-empty dash-rise dash-d4">
