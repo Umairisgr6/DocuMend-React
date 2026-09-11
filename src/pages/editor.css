@@ -1854,3 +1854,273 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Tiptap editor (S2)
+   The .editor-paper div is the page; Tiptap's editable element sits inside it
+   as .editor-prose.
+   ========================================================================== */
+.editor-paper:focus-within {
+  box-shadow: 0 13px 26px rgba(68, 52, 33, .13), 0 0 0 3px rgba(215, 155, 48, .16);
+}
+.editor-paper.is-disabled { opacity: .6; }
+.editor-paper .editor-prose {
+  min-height: 600px;
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.editor-paper .editor-prose > *:first-child { margin-top: 0; }
+.editor-paper .editor-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #a99f8e;
+  pointer-events: none;
+}
+.editor-paper h1 {
+  margin: 8px 0 12px;
+  color: #1c3d33;
+  font-family: var(--app-font-serif);
+  font-size: 24px;
+  line-height: 1.15;
+}
+.editor-paper h3 {
+  margin: 22px 0 6px;
+  color: #2c5345;
+  font-family: var(--app-font-serif);
+  font-size: 14px;
+  line-height: 1.25;
+}
+.editor-paper ul,
+.editor-paper ol {
+  margin: 0 0 12px;
+  padding-left: 1.5em;
+}
+.editor-paper li > p { margin: 0 0 4px; }
+.editor-paper ul[data-type="taskList"] {
+  padding-left: 0;
+  list-style: none;
+}
+.editor-paper ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.editor-paper ul[data-type="taskList"] li > label { margin-top: 3px; }
+.editor-paper ul[data-type="taskList"] li > div { flex: 1; }
+.editor-paper ul[data-type="taskList"] li[data-checked="true"] > div { color: #8f988f; text-decoration: line-through; }
+.editor-paper a { color: #2f6f86; text-decoration: underline; }
+.editor-paper mark { border-radius: 2px; padding: 0 1px; }
+.editor-paper code {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #f3ecdf;
+  font-family: var(--app-font-mono);
+  font-size: .92em;
+}
+.editor-paper pre {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f3ecdf;
+  font-family: var(--app-font-mono);
+}
+.editor-paper th {
+  padding: 7px 8px;
+  border: 1px solid #ded3c0;
+  color: #315847;
+  background: #e8f0e7;
+  font-weight: 800;
+  text-align: left;
+}
+.editor-paper td > p,
+.editor-paper th > p { margin: 0; }
+.editor-paper .selectedCell { background: rgba(216, 165, 60, .18); }
+/* Page break (a horizontal rule in the document) */
+.editor-paper hr {
+  position: relative;
+  margin: 28px 0;
+  border: 0;
+  border-top: 2px dashed #d8cdb9;
+  overflow: visible;
+}
+.editor-paper hr::after {
+  content: 'Page break';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  color: #a2957d;
+  background: #fffdf8;
+  font-family: var(--app-font-sans);
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.editor-paper hr.ProseMirror-selectednode { border-top-color: #d8a53c; }
+/* Find-bar matches (painted by src/editor/highlights.js) */
+.editor-find-match {
+  border-radius: 2px;
+  background: rgba(216, 165, 60, .45);
+  box-shadow: 0 0 0 1px rgba(182, 125, 24, .35);
+}
+.editor-findbar { flex-wrap: wrap; }
+.editor-findbar .editor-replace-input {
+  width: min(200px, 34vw);
+  padding-left: 10px;
+  border-left: 1px solid #ddd4c4;
+}
+.editor-findbar .editor-replace-button {
+  margin-left: 0;
+  padding: 5px 10px;
+  border: 1px solid #d9cdb6;
+  border-radius: 999px;
+  color: #2a4c3f;
+  font-size: 10px;
+  font-weight: 600;
+}
+.editor-findbar .editor-replace-button:disabled { opacity: .45; cursor: default; }
+
+/* ==========================================================================
+   Clean layout: title bar → tabs → ribbon → page → status bar.
+   The document list, command bar and canvas toolbar were removed from this
+   page; the review panel opens from the "Review panel" button.
+   ========================================================================== */
+.editor-topbar { min-height: 56px; padding: 8px 16px; }
+.editor-topbar-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.editor-topbar-titles { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.editor-topbar .editor-document-select { width: min(380px, 42vw); color: #fff7e8; }
+.editor-topbar .editor-document-select select {
+  width: 100%;
+  padding-right: 20px;
+  overflow: hidden;
+  color: #fff7e8;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.editor-topbar .editor-document-select select option { color: #172d26; }
+.editor-save-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #a8bcae;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.editor-save-line span { width: 6px; height: 6px; border-radius: 50%; background: #7caa91; }
+.editor-save-line.is-saving span { background: #d8a53c; }
+.editor-topbar-actions { gap: 4px; }
+.editor-topbar-actions .editor-top-icon-action { width: 32px; height: 32px; }
+
+.editor-review-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 999px;
+  color: #d9e4d8;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.editor-review-switch:hover { background: rgba(255, 255, 255, .08); }
+.editor-review-switch.is-on { border-color: #f3e2b5; color: #172d26; background: #f3e2b5; }
+.editor-review-switch:focus-visible { outline: 2px solid #d8a53c; outline-offset: 2px; }
+
+.editor-main-grid.is-clean {
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 0;
+  min-height: 0;
+  padding: 0;
+  background: #e7e0d4;
+}
+.editor-workspace.review-hidden .editor-main-grid.is-clean { grid-template-columns: minmax(0, 1fr); }
+.editor-main-grid.is-clean .editor-canvas-shell {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.editor-main-grid.is-clean .editor-review-panel {
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  box-shadow: none;
+}
+.editor-main-grid.is-clean .editor-paper-wrap {
+  min-height: 0;
+  padding: 28px clamp(12px, 3vw, 40px) 40px;
+  background: #e7e0d4;
+}
+
+/* Status bar under the page */
+.editor-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 16px;
+  border-top: 1px solid #ddd3c2;
+  color: #5e6d64;
+  background: #f6f1e7;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.editor-statusbar-spacer { flex: 1; }
+.editor-zoom { display: inline-flex; align-items: center; gap: 6px; }
+.editor-zoom button {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #d9cdb6;
+  border-radius: 4px;
+  color: #35473f;
+  background: #fffdf8;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.editor-zoom button:hover { border-color: #bfae8c; }
+.editor-zoom span { min-width: 38px; text-align: center; }
+
+.dash-dark .editor-main-grid.is-clean,
+.dash-dark .editor-main-grid.is-clean .editor-paper-wrap { background: #182d26; }
+.dash-dark .editor-statusbar { border-color: #385247; color: #a7b9aa; background: #203a30; }
+.dash-dark .editor-zoom button { border-color: #456253; color: #e6efdf; background: #29453a; }
+
+/* Desktop: the editor fills the window; only the page scrolls, so the status
+   bar stays at the bottom like a desktop word processor. */
+@media (min-width: 900px) {
+  /* The dark theme (version.css) adds 60px of bottom padding to html, body and the
+     shell; the editor fills the window, so remove it here. */
+  .dash-main:has(.editor-main-grid.is-clean),
+  .dash-dark:has(.editor-main-grid.is-clean),
+  .dash-dark .dash-main:has(.editor-main-grid.is-clean) { padding-bottom: 0 !important; }
+  .editor-page:has(.editor-main-grid.is-clean) {
+    display: flex;
+    height: 100dvh;
+    flex-direction: column;
+  }
+  .editor-page:has(.editor-main-grid.is-clean) .editor-workspace {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+  }
+  .editor-main-grid.is-clean { flex: 1; min-height: 0; }
+  .editor-main-grid.is-clean .editor-canvas-shell { height: 100%; }
+  .editor-main-grid.is-clean .editor-paper-wrap { flex: 1; min-height: 0; overflow: auto; }
+  .editor-main-grid.is-clean .editor-review-panel { min-height: 0; overflow-y: auto; }
+}
+
+@media (max-width: 1100px) {
+  .editor-main-grid.is-clean { grid-template-columns: minmax(0, 1fr); }
+  .editor-main-grid.is-clean .editor-review-panel { border-width: 1px 0 0; }
+}
+@media (max-width: 640px) {
+  .editor-statusbar { flex-wrap: wrap; gap: 10px; }
+  .editor-topbar .editor-document-select { width: min(220px, 50vw); }
+}

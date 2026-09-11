@@ -15,10 +15,12 @@
  *   3. Its palette is re-pointed at the shared --dash-* tokens, so the page
  *      follows the workspace theme and flips to dark mode with the shell.
  *
- * The recent-documents list is the one part of this app that genuinely
- * persists: it writes metadata (name, type, size, date) to localStorage.
- * File *bytes* are deliberately never stored -- that is the privacy promise
- * the dialog makes, so keep it that way.
+ * Importing is real: src/editor/importers.js converts the file's text
+ * (.docx, .pdf, .txt, .md) on this device and it is saved as a new document
+ * in IndexedDB. The original file's bytes are never stored or uploaded --
+ * that is the privacy promise the dialog makes, so keep it that way.
+ * The recent-imports list keeps metadata (name, type, size, date, document
+ * id) in localStorage.
  */
 import { useEffect, useRef, useState } from 'react';
 import './upload-document.css';
@@ -54,10 +56,12 @@ import {
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { IMPORT_ACCEPT, IMPORT_EXTENSIONS, importFile } from '../editor/importers';
+import { createDocument, getDocument, updateDocument } from '../storage/documents';
 
 const RECENT_STORAGE_KEY = 'documend-recent-documents';
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
-const ACCEPTED_EXTENSIONS = /\.(pdf|docx?|txt|rtf)$/i;
+const ACCEPTED_EXTENSIONS = IMPORT_EXTENSIONS;
 
 /* ==========================================================================
    Helpers
@@ -146,6 +150,7 @@ export default function UploadDocument() {
   // Import state
   const inputRef = useRef(null);
   const processTimer = useRef(null);
+  const importToken = useRef(0); // bumps on cancel, so a late-finishing import is ignored
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [stage, setStage] = useState('idle');
@@ -156,6 +161,7 @@ export default function UploadDocument() {
   const [notice, setNotice] = useState('');
   const [noticeKind, setNoticeKind] = useState('info');
   const [recentDocuments, setRecentDocuments] = useState(readRecentDocuments);
+  const [importedDocId, setImportedDocId] = useState(null);
 
   useEffect(() => {
     if (!dialog) return undefined;
@@ -201,7 +207,7 @@ export default function UploadDocument() {
   const acceptFile = (candidate) => {
     if (!candidate) return;
     if (!ACCEPTED_EXTENSIONS.test(candidate.name)) {
-      showNotice('That file type is not supported. Choose a PDF, DOC, DOCX, TXT, or RTF file.', 'error');
+      showNotice('That file type is not supported. Choose a DOCX, PDF, TXT or MD file (save old .doc or .rtf files as .docx first).', 'error');
       return;
     }
     if (candidate.size > MAX_FILE_BYTES) {
@@ -240,41 +246,48 @@ export default function UploadDocument() {
     setNotice('');
   };
 
-  const beginImport = () => {
+  // Reads the file on this device and saves its text as a new document.
+  const beginImport = async () => {
     if (!file || stage === 'processing') return;
+    const token = ++importToken.current;
     setStage('processing');
-    setProgress(8);
+    setProgress(15);
     setNotice('');
-
-    let currentProgress = 8;
-    processTimer.current = window.setInterval(() => {
-      currentProgress += 13;
-      if (currentProgress < 100) {
-        setProgress(currentProgress);
-        return;
-      }
-
-      clearInterval(processTimer.current);
-      const imported = {
+    try {
+      const imported = await importFile(file); // reading + converting
+      if (token !== importToken.current) return;
+      setProgress(70);
+      const doc = await createDocument({ title: imported.title });
+      await updateDocument(doc.id, { content: imported.html, wordCount: imported.wordCount, format: imported.format });
+      setImportedDocId(doc.id);
+      const entry = {
         id: `${Date.now()}-${file.name}`,
+        docId: doc.id,
         name: file.name,
         type: getType(file.name),
         size: file.size,
         importedAt: Date.now(),
       };
       setRecentDocuments((current) => {
-        const next = [imported, ...current.filter((item) => item.name !== imported.name)].slice(0, 6);
+        const next = [entry, ...current.filter((item) => item.name !== entry.name)].slice(0, 6);
         writeRecentDocuments(next);
         return next;
       });
       setProgress(100);
       setStage('success');
-      showNotice('Your working copy is ready. The original file was not changed.', 'success');
-    }, 180);
+      showNotice(`Imported ${imported.wordCount.toLocaleString()} words. The original file was not changed.`, 'success');
+    } catch (error) {
+      if (token !== importToken.current) return;
+      setStage('idle');
+      setProgress(0);
+      showNotice(error.message || 'That file could not be imported.', 'error');
+    }
   };
 
   const resetScreen = () => {
     if (processTimer.current) clearInterval(processTimer.current);
+    importToken.current += 1;
+    setImportedDocId(null);
     setFile(null);
     setStage('idle');
     setProgress(0);
@@ -286,10 +299,15 @@ export default function UploadDocument() {
     showNotice('Import cancelled. Your local library is unchanged.');
   };
 
-  const chooseRecent = (document) => {
+  const chooseRecent = async (entry) => {
+    const doc = entry.docId ? await getDocument(entry.docId) : null;
+    if (doc) {
+      navigate(`/editor?doc=${doc.id}`);
+      return;
+    }
     setFile(null);
     setStage('idle');
-    showNotice(`${document.name} is local metadata only. Re-import the original file to open a working copy.`);
+    showNotice(`${entry.name} is no longer in your library. Import the file again to open it.`);
   };
 
   const removeRecent = (id, name) => {
@@ -428,7 +446,7 @@ export default function UploadDocument() {
                       <button
                         type="button"
                         className="upload-primary"
-                        onClick={() => navigate('/editor')}
+                        onClick={() => navigate(importedDocId ? `/editor?doc=${importedDocId}` : '/editor')}
                       >
                         Open in editor <ArrowRight size={14} />
                       </button>
@@ -457,7 +475,7 @@ export default function UploadDocument() {
                         ref={inputRef}
                         className="dash-sr"
                         type="file"
-                        accept=".pdf,.doc,.docx,.txt,.rtf"
+                        accept={IMPORT_ACCEPT}
                         aria-label="Choose a document file"
                         onChange={handleBrowse}
                       />
@@ -513,7 +531,7 @@ export default function UploadDocument() {
                             or <strong>browse from this device</strong>
                           </p>
                           <div className="upload-format-list" aria-label="Accepted file types">
-                            {['PDF', 'DOCX', 'TXT', 'RTF'].map((format) => (
+                            {['DOCX', 'PDF', 'TXT', 'MD'].map((format) => (
                               <span className="upload-format-chip" key={format}>{format}</span>
                             ))}
                           </div>
@@ -743,7 +761,7 @@ export default function UploadDocument() {
                   untouched.
                 </p>
                 <ul className="upload-dialog-list">
-                  <li><Check size={16} /> PDF, DOC, DOCX, TXT, and RTF files up to 20 MB.</li>
+                  <li><Check size={16} /> DOCX, PDF, TXT and MD files up to 20 MB.</li>
                   <li><Check size={16} /> Import progress is simulated locally for this prototype.</li>
                   <li><Check size={16} /> Recent documents are metadata reminders, not saved files.</li>
                 </ul>

@@ -21,7 +21,7 @@ Indexed: `id` (key), `folderId`, `category`, `updatedAt`
 | `checks` | `["grammar","contradiction"]` | analyses picked at setup |
 | `tint` | `"sage"` | card colour |
 | `format` | `"DOCX"` | label on the card |
-| `content` | `""` | HTML today, Tiptap JSON after S2, ciphertext after S3 |
+| `content` | `"<p>…</p>"` | HTML from the Tiptap editor (`editor.getHTML()`); ciphertext after S3 |
 | `wordCount` | `0` | |
 | `status` | `"draft"` | `draft` / `done` |
 | `syncStatus` | `"local"` | `local` / `queued` / `synced` (S9) |

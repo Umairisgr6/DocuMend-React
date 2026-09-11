@@ -34,7 +34,8 @@ import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createDocument, listDocuments, updateDocument } from '../storage/documents';
-import { countWords, formatModified, pageLabel, pagesFor } from '../storage/format';
+import { formatModified, pageLabel, pagesFor } from '../storage/format';
+import { importFile } from '../editor/importers';
 import { formatBytes, formatPercent, getStorageReport } from '../storage/quota';
 
 /* ==========================================================================
@@ -54,11 +55,6 @@ function toRow(doc) {
     color: doc.tint ?? 'gold',
   };
 }
-
-// Same limits the import screen at /upload enforces, so a file dropped on the
-// tile and a file chosen there are accepted or refused identically.
-const ACCEPTED_EXTENSIONS = /\.(pdf|docx?|txt|rtf)$/i;
-const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
 const statusClass = {
   Done: 'dash-status-done',
@@ -256,40 +252,18 @@ function Dashboard() {
     }
   };
 
-  /** Plain text becomes paragraphs; PDF/DOCX text import arrives with the Tiptap editor (S2). */
-  const textToHtml = (text) => text
-    .split(/\r?\n\s*\r?\n/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => `<p>${block.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>')}</p>`)
-    .join('');
-
+  /** A file dropped on "Upload / drop" becomes a new document (.docx, .pdf, .txt, .md). */
   const handleFiles = async (files) => {
     const file = files?.[0];
     if (!file) return;
-
-    // Same rules the import screen uses.
-    if (!ACCEPTED_EXTENSIONS.test(file.name)) {
-      announce('That file type is not supported. Use PDF, DOC, DOCX, TXT or RTF.');
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      announce('That file is over the 20 MB limit.');
-      return;
-    }
-
-    const title = file.name.replace(/\.[^/.]+$/, '') || 'Untitled document';
-    const extension = file.name.split('.').pop()?.toUpperCase() ?? 'DOC';
+    announce(`Reading ${file.name}…`);
     try {
-      const doc = await createDocument({ title });
-      const isText = extension === 'TXT';
-      const text = isText ? await file.text() : '';
-      await updateDocument(doc.id, { format: extension, content: textToHtml(text), wordCount: countWords(text) });
-      announce(isText ? `${file.name} imported` : `${file.name} added. Text import for ${extension} files is coming soon.`);
+      const imported = await importFile(file);
+      const doc = await createDocument({ title: imported.title });
+      await updateDocument(doc.id, { content: imported.html, wordCount: imported.wordCount, format: imported.format });
       navigate(`/editor?doc=${doc.id}`);
     } catch (error) {
-      console.error(error);
-      announce('The file could not be saved. Check that your browser allows site storage, then try again.');
+      announce(error.message || 'That file could not be imported.');
     }
   };
 
@@ -408,7 +382,7 @@ function Dashboard() {
             {loading ? null : documents.length === 0 ? (
               <div className="dash-empty">
                 <FileText size={22} />
-                <p>No documents yet. Create one, or drop a .txt file on "Upload / drop".</p>
+                <p>No documents yet. Create one, or drop a Word, PDF or text file on "Upload / drop".</p>
                 <button type="button" onClick={openNewDocument}>Create a document</button>
               </div>
             ) : filteredDocuments.length > 0 ? (

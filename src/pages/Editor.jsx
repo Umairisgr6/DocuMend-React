@@ -1,33 +1,21 @@
 /**
  * Editor — the writing surface, served at the `/editor` route.
  *
- * Ported from the Replit prototype, where it was the `EditorPage` component
- * inside a single 1490-line App.tsx. Changes made in the move:
- *   - TypeScript annotations removed; this codebase is plain JSX.
- *   - The prototype rendered this inside its own Home component and passed
- *     documents/selection/navigation down as props. Here the page is a route
- *     of its own, so it owns that state and uses the shared shell from
- *     components/WorkspaceChrome.jsx, like Dashboard and MyDocuments.
- *   - Tailwind utility classes on the wrapper replaced with `editor-*`
- *     classes; this project vendors only the utilities the landing page uses.
- *
- * The document surface is a plain `contentEditable` article driven by
- * `document.execCommand`. That API is formally deprecated but is still what
- * every browser implements for rich-text editing, and it keeps the page free
- * of an editor dependency. If this ever needs collaborative editing or a
- * reliable undo stack, that is the point to reach for a real editor engine.
+ * The page is built on Tiptap 3 (a ProseMirror-based editor). The document
+ * surface is <EditorContent>; the toolbar calls Tiptap commands through
+ * runCommand(). Extensions live in src/editor/extensions.js, file import in
+ * src/editor/importers.js, export in src/editor/exporters.js and on-screen
+ * highlights (find matches now, engine issues later) in src/editor/highlights.js.
  *
  * Documents are loaded from and saved to IndexedDB (src/storage). The page
- * reads ?doc=<id> from the URL; typing is written back every 5 seconds, and
+ * reads ?doc=<id> from the URL; changes are written back every 5 seconds, and
  * again when you switch documents, press Ctrl+S, or leave the page.
+ * Documents are stored as HTML, which Version history can read directly.
  * The review panel's issues are still sample data until the engine (S6).
  */
-/**
- * Editor — the writing surface, served at the `/editor` route.
- *
- * Integrated with the shared ThemeContext for synchronized Light/Dark mode switching.
- */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import { EditorState } from '@tiptap/pm/state';
 import './editor.css';
 import {
   AlertTriangle,
@@ -99,7 +87,6 @@ import {
   MobileDrawer,
   MobileTopbar,
   Sidebar,
-  WorkspaceHeader,
   WorkspaceModal,
 } from '../components/WorkspaceChrome';
 import { workspaceRoutes } from '../components/workspace-nav';
@@ -114,18 +101,20 @@ import {
 } from '../storage/documents';
 import { clockTime, countWords, pageLabel, pagesFor } from '../storage/format';
 import { maybeAutoVersion } from '../storage/versions';
+import { buildExtensions } from '../editor/extensions';
+import { findRanges, replaceAll } from '../editor/highlights';
+import { IMPORT_ACCEPT, importFile } from '../editor/importers';
+import { exportDocx, exportTxt, printDocument } from '../editor/exporters';
+import HomeRibbon from '../editor/HomeRibbon';
 
 /* ==========================================================================
    Content data
    ========================================================================== */
 
 const AUTOSAVE_MS = 5000;
-const EMPTY_DOCUMENT = '<p><br></p>';
 
-/** Rough plain text from saved HTML, for the word count. */
-function htmlToText(html) {
-  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ');
-}
+/** The font-size dropdown's values, as CSS sizes (the paper's base size is 12px). */
+const FONT_SIZES = { 3: '11px', 4: '12px', 5: '14px', 6: '16px' };
 
 /** The ?doc=<id> the page was opened with, if any. */
 function docIdFromUrl() {
@@ -201,7 +190,7 @@ function Editor() {
   const [findQuery, setFindQuery] = useState('');
   const [trackedChanges, setTrackedChanges] = useState(false);
   const [commentCount, setCommentCount] = useState(2);
-  const [showReviewPanel, setShowReviewPanel] = useState(true);
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [pageLayout, setPageLayout] = useState('standard');
   const [issueStates, setIssueStates] = useState({});
@@ -210,16 +199,59 @@ function Editor() {
   const [heatmapEnabled, setHeatmapEnabled] = useState(true);
   const [documentPanelExpanded, setDocumentPanelExpanded] = useState(true);
   const [findMatches, setFindMatches] = useState(0);
+  const [replaceText, setReplaceText] = useState('');
+  const [importing, setImporting] = useState(false);
 
-  const editorRef = useRef(null);
   const loadedIdRef = useRef(null); // the document currently shown in the editor
-  const pendingRef = useRef(null); // { id, html } typed but not yet written
+  const dirtyIdRef = useRef(null); // set when that document has changes not yet written
+  const findQueryRef = useRef('');
+  const editorRef = useRef(null); // the Tiptap editor instance, for callbacks
+  const onEditorUpdateRef = useRef(() => {});
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
   const currentDocument = documents.find((doc) => doc.id === selectedId) ?? null;
 
-  const announce = (message) => setToast(message);
+  // One Tiptap editor for the page; documents are swapped into it with setContent.
+  const editorOptions = useMemo(() => ({
+    extensions: buildExtensions(),
+    editable: false, // becomes editable once a document is loaded
+    editorProps: {
+      attributes: { class: 'editor-prose', 'aria-label': 'Document editor', spellcheck: 'true' },
+    },
+    onUpdate: ({ editor: instance }) => onEditorUpdateRef.current(instance),
+  }), []);
+  const editor = useEditor(editorOptions);
+  editorRef.current = editor;
+
+  // Which toolbar buttons should look pressed for the text under the cursor.
+  const formats = useEditorState({
+    editor,
+    selector: ({ editor: e }) => {
+      if (!e) return null;
+      let block = 'p';
+      if (e.isActive('heading', { level: 1 })) block = 'h1';
+      else if (e.isActive('heading', { level: 2 })) block = 'h2';
+      else if (e.isActive('heading', { level: 3 })) block = 'h3';
+      else if (e.isActive('blockquote')) block = 'blockquote';
+      return {
+        bold: e.isActive('bold'),
+        italic: e.isActive('italic'),
+        underline: e.isActive('underline'),
+        strike: e.isActive('strike'),
+        highlight: e.isActive('highlight'),
+        superscript: e.isActive('superscript'),
+        subscript: e.isActive('subscript'),
+        bulletList: e.isActive('bulletList'),
+        orderedList: e.isActive('orderedList'),
+        taskList: e.isActive('taskList'),
+        align: ['center', 'right', 'justify'].find((align) => e.isActive({ textAlign: align })) ?? 'left',
+        block,
+      };
+    },
+  }) ?? {};
+
+  const announce = useCallback((message) => setToast(message), []);
 
   useEffect(() => {
     if (!toast) return;
@@ -229,24 +261,41 @@ function Editor() {
 
   /** Writes whatever was typed since the last save. Safe to call at any time. */
   const saveNow = useCallback(async () => {
-    const pending = pendingRef.current;
-    if (!pending) return;
-    pendingRef.current = null;
-    const words = countWords(htmlToText(pending.html));
+    const id = dirtyIdRef.current;
+    const instance = editorRef.current;
+    if (!id || !instance || instance.isDestroyed || loadedIdRef.current !== id) return;
+    dirtyIdRef.current = null;
+    const html = instance.getHTML();
+    const words = countWords(instance.getText());
     try {
-      await updateDocument(pending.id, { content: pending.html, wordCount: words });
-      maybeAutoVersion(pending.id).catch((error) => console.error(error)); // history checkpoint, at most every 10 min
-      if (loadedIdRef.current === pending.id) {
-        setLastSavedAt(Date.now());
-        setWordCount(words);
-      }
-      if (!pendingRef.current) setIsSaved(true);
+      await updateDocument(id, { content: html, wordCount: words });
+      maybeAutoVersion(id).catch((error) => console.error(error)); // history checkpoint, at most every 10 min
+      setLastSavedAt(Date.now());
+      setWordCount(words);
+      if (!dirtyIdRef.current) setIsSaved(true);
     } catch (error) {
       console.error(error);
-      if (!pendingRef.current) pendingRef.current = pending; // retry on the next tick
+      if (!dirtyIdRef.current) dirtyIdRef.current = id; // retry on the next tick
       setToast('Auto-save failed. Your text is still on screen; check that the browser allows site storage.');
     }
   }, []);
+
+  /** Paints find-bar matches on the page and updates the count. */
+  const refreshFind = useCallback((query = findQueryRef.current) => {
+    const instance = editorRef.current;
+    if (!instance || instance.isDestroyed) return;
+    const ranges = query ? findRanges(instance.state.doc, query) : [];
+    instance.commands.setHighlights('find', ranges);
+    setFindMatches(ranges.length);
+  }, []);
+
+  // Every edit: mark the document dirty (the 5-second timer saves it) and keep find matches current.
+  onEditorUpdateRef.current = () => {
+    if (!loadedIdRef.current) return;
+    dirtyIdRef.current = loadedIdRef.current;
+    setIsSaved(false);
+    if (findQueryRef.current) window.requestAnimationFrame(() => refreshFind());
+  };
 
   // No document chosen yet: open the most recent one.
   useEffect(() => {
@@ -255,23 +304,38 @@ function Editor() {
 
   // Load the chosen document into the editor and keep its id in the URL.
   useEffect(() => {
-    if (!selectedId) return undefined;
+    if (!selectedId || !editor) return undefined;
     let cancelled = false;
     getDocument(selectedId).then((doc) => {
-      if (cancelled || !editorRef.current) return;
+      if (cancelled || editor.isDestroyed) return;
       if (!doc) {
         setSelectedId(null); // deleted or a bad link: fall back to the latest document
         return;
       }
-      editorRef.current.innerHTML = doc.content || EMPTY_DOCUMENT;
+      loadedIdRef.current = null; // loading is not an edit
+      editor.commands.setContent(doc.content || '', { emitUpdate: false });
+      // A fresh undo history, so Ctrl+Z can't bring back the previous document.
+      editor.view.updateState(EditorState.create({ doc: editor.state.doc, plugins: editor.state.plugins }));
+      editor.setEditable(true, false);
       loadedIdRef.current = doc.id;
+      dirtyIdRef.current = null;
       setIsSaved(true);
       setLastSavedAt(doc.updatedAt);
-      setWordCount(doc.wordCount ?? 0);
+      setWordCount(doc.wordCount ?? countWords(editor.getText()));
+      refreshFind();
       window.history.replaceState({}, '', `/editor?doc=${doc.id}`);
     });
     return () => { cancelled = true; };
-  }, [selectedId]);
+  }, [selectedId, editor, refreshFind]);
+
+  // With no documents at all, the page stays read-only until one is created.
+  useEffect(() => {
+    if (editor && noDocuments) {
+      loadedIdRef.current = null;
+      editor.setEditable(false, false);
+      editor.commands.setContent('', { emitUpdate: false });
+    }
+  }, [editor, noDocuments]);
 
   // Auto-save every 5 seconds (FR-03-02-02), and when the tab is hidden or the page is left.
   useEffect(() => {
@@ -299,6 +363,11 @@ function Editor() {
         event.preventDefault();
         setShowFind(true);
       }
+      if (key === 'h') {
+        event.preventDefault(); // Ctrl+H: find and replace
+        setShowFind(true);
+        window.setTimeout(() => document.getElementById('editor-replace-input')?.focus(), 0);
+      }
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
@@ -318,34 +387,134 @@ function Editor() {
     };
   }, [showFileMenu]);
 
-  // Remember the latest text; the 5-second timer writes it.
-  const markUnsaved = () => {
-    if (!loadedIdRef.current || !editorRef.current) return;
-    pendingRef.current = { id: loadedIdRef.current, html: editorRef.current.innerHTML };
-    setIsSaved(false);
-  };
+  const canEdit = () => Boolean(editor && !editor.isDestroyed && loadedIdRef.current);
 
+  /** Runs a toolbar command on the selection (command names kept from the old editor). */
   const runCommand = (command, value) => {
-    editorRef.current?.focus();
-    window.document.execCommand(command, false, value);
-    markUnsaved();
+    if (!canEdit()) {
+      announce('Open or create a document first.');
+      return;
+    }
+    if (command === 'copy') {
+      const { from, to } = editor.state.selection;
+      const text = editor.state.doc.textBetween(from, to, '\n');
+      if (text) navigator.clipboard?.writeText(text).catch(() => {});
+      return;
+    }
+    const chain = editor.chain().focus();
+    const listItem = editor.isActive('taskItem') ? 'taskItem' : 'listItem';
+    switch (command) {
+      case 'undo': chain.undo(); break;
+      case 'redo': chain.redo(); break;
+      case 'bold': chain.toggleBold(); break;
+      case 'italic': chain.toggleItalic(); break;
+      case 'underline': chain.toggleUnderline(); break;
+      case 'strikeThrough': chain.toggleStrike(); break;
+      case 'backColor': chain.toggleHighlight({ color: value }); break;
+      case 'superscript': chain.toggleSuperscript(); break;
+      case 'subscript': chain.toggleSubscript(); break;
+      case 'removeFormat': chain.unsetAllMarks().clearNodes(); break;
+      case 'foreColor': chain.setColor(value); break;
+      case 'justifyLeft': chain.setTextAlign('left'); break;
+      case 'justifyCenter': chain.setTextAlign('center'); break;
+      case 'justifyRight': chain.setTextAlign('right'); break;
+      case 'justifyFull': chain.setTextAlign('justify'); break;
+      case 'insertUnorderedList': chain.toggleBulletList(); break;
+      case 'insertOrderedList': chain.toggleOrderedList(); break;
+      case 'insertTaskList': chain.toggleTaskList(); break;
+      case 'indent': chain.sinkListItem(listItem); break;
+      case 'outdent': chain.liftListItem(listItem); break;
+      case 'pageBreak': chain.setHorizontalRule(); break;
+      case 'insertTable': chain.insertTable({ rows: 2, cols: 2, withHeaderRow: true }); break;
+      case 'fontName': chain.setFontFamily(value); break;
+      case 'fontSize': chain.setFontSize(FONT_SIZES[value] ?? value); break;
+      case 'formatBlock':
+        if (value === 'p') chain.setParagraph();
+        else if (value === 'blockquote') chain.toggleBlockquote();
+        else chain.toggleHeading({ level: Number(value.slice(1)) });
+        break;
+      default:
+        return;
+    }
+    chain.run();
   };
 
   const insertHtml = (html, message) => {
-    editorRef.current?.focus();
-    window.document.execCommand('insertHTML', false, html);
-    markUnsaved();
+    if (!canEdit()) {
+      announce('Open or create a document first.');
+      return;
+    }
+    editor.chain().focus().insertContent(html).run();
     announce(message);
+  };
+
+  /** Adds, changes or removes the link on the selected text. */
+  const insertLink = () => {
+    if (!canEdit()) {
+      announce('Open or create a document first.');
+      return;
+    }
+    const previous = editor.getAttributes('link').href;
+    const url = window.prompt('Link address (leave empty to remove the link)', previous || 'https://');
+    if (url === null) return;
+    const chain = editor.chain().focus().extendMarkRange('link');
+    if (!url.trim()) {
+      chain.unsetLink().run();
+      return;
+    }
+    if (editor.state.selection.empty && !previous) {
+      const safe = url.trim().replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      editor.chain().focus().insertContent(`<a href="${safe}">${safe}</a> `).run();
+    } else {
+      chain.setLink({ href: url.trim() }).run();
+    }
   };
 
   const updateFind = (query) => {
     setFindQuery(query);
-    if (!query) {
-      setFindMatches(0);
+    findQueryRef.current = query;
+    refreshFind(query);
+  };
+
+  const openFind = () => {
+    setShowFind(true);
+    window.setTimeout(() => document.getElementById('editor-find-input')?.focus(), 0);
+  };
+
+  const openReplace = () => {
+    setShowFind(true);
+    window.setTimeout(() => document.getElementById('editor-replace-input')?.focus(), 0);
+  };
+
+  const closeFind = () => {
+    updateFind('');
+    setReplaceText('');
+    setShowFind(false);
+  };
+
+  const handleReplaceAll = () => {
+    if (!canEdit() || !findQuery) return;
+    const count = replaceAll(editor, findQuery, replaceText);
+    refreshFind();
+    announce(count ? `Replaced ${count} ${count === 1 ? 'match' : 'matches'}` : 'No matches to replace');
+  };
+
+  const currentTitle = () => currentDocument?.title ?? 'Untitled document';
+
+  const handleExport = async (format) => {
+    if (!canEdit()) {
+      announce('Open a document to export it.');
       return;
     }
-    const text = editorRef.current?.innerText.toLowerCase() ?? '';
-    setFindMatches(text.split(query.toLowerCase()).length - 1);
+    try {
+      if (format === 'docx') await exportDocx(currentTitle(), editor.getJSON());
+      else if (format === 'txt') exportTxt(currentTitle(), editor.getText({ blockSeparator: '\n\n' }));
+      else printDocument(currentTitle(), editor.getHTML());
+      announce(format === 'pdf' ? 'Choose "Save as PDF" in the print window' : `Saved "${currentTitle()}.${format}" to your Downloads`);
+    } catch (error) {
+      console.error(error);
+      announce('The export did not work. Try again, or export as .txt.');
+    }
   };
 
   const addComment = () => {
@@ -353,10 +522,35 @@ function Editor() {
     announce('Comment added to the document');
   };
 
-  const handleOpenFile = (files) => {
+  /** Imports a .docx / .pdf / .txt / .md file as a new document and opens it. */
+  const handleOpenFile = async (files) => {
     const file = files?.[0];
-    if (!file) return;
-    announce(`${file.name} opened in the editor`);
+    if (!file || importing) return;
+    setImporting(true);
+    announce(`Reading ${file.name}…`);
+    try {
+      const imported = await importFile(file);
+      const doc = await saveNewDocument({ title: imported.title });
+      await updateDocument(doc.id, { content: imported.html, wordCount: imported.wordCount, format: imported.format });
+      await changeDocument(doc.id);
+      announce(`${file.name} imported as a new document`);
+    } catch (error) {
+      announce(error.message || 'That file could not be imported.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  /** Makes a copy of the open document and switches to it. */
+  const makeCopy = async () => {
+    if (!canEdit()) return;
+    await saveNow();
+    const source = await getDocument(loadedIdRef.current);
+    if (!source) return;
+    const copy = await saveNewDocument({ title: `${source.title} (copy)`, type: source.type, folderId: source.folderId });
+    await updateDocument(copy.id, { content: source.content, wordCount: source.wordCount, format: source.format });
+    await changeDocument(copy.id);
+    announce('Copy created and opened');
   };
 
   const handleOpenFolder = (files) => {
@@ -459,20 +653,17 @@ function Editor() {
       />
 
       <main className={`dash-main ${sidebarCollapsed ? 'is-wide' : ''}`}>
-        <WorkspaceHeader search={workspaceSearch} onSearchChange={setWorkspaceSearch} onAnnounce={announce} />
-
         <div className="editor-page">
           <div className={`editor-workspace ${focusMode ? 'is-focus-mode' : ''} ${showReviewPanel ? '' : 'review-hidden'}`}>
 
-            {/* Topbar: identity, quick actions, save state */}
+            {/* Topbar: document title and save status, a few quick actions */}
             <div className="editor-topbar">
               <div className="editor-topbar-identity">
-                <button type="button" onClick={() => navigate('/documents')} className="editor-back-button" aria-label="Back to documents">
+                <button type="button" onClick={() => navigate('/documents')} className="editor-back-button" aria-label="Back to documents" title="Back to My documents">
                   <ArrowUpRight size={16} className="editor-back-icon" />
                 </button>
                 <span className="editor-file-icon"><FileText size={17} /></span>
                 <div className="editor-topbar-titles">
-                  <p className="editor-brandline">DocuMend <span>· private writing studio</span></p>
                   <label className="editor-document-select">
                     <span className="dash-sr">Choose document</span>
                     <select value={currentDocument?.id ?? ''} disabled={noDocuments} onChange={(event) => changeDocument(event.target.value)}>
@@ -480,26 +671,22 @@ function Editor() {
                     </select>
                     <ChevronDown size={13} />
                   </label>
+                  <p className={`editor-save-line ${isSaved ? 'is-saved' : 'is-saving'}`}>
+                    <span aria-hidden="true" />
+                    {isSaved
+                      ? (lastSavedAt ? `Saved on this device · ${clockTime(lastSavedAt)}` : 'Saved on this device')
+                      : 'Saving…'}
+                  </p>
                 </div>
               </div>
 
-              <div className="editor-topbar-quick-actions" aria-label="Quick access">
-                <button type="button" className="editor-top-icon-action" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand('undo')} aria-label="Undo" title="Undo"><Undo2 size={14} /></button>
-                <button type="button" className="editor-top-icon-action" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand('redo')} aria-label="Redo" title="Redo"><Redo2 size={14} /></button>
-                <span className="editor-topbar-divider" />
-                <button type="button" className="editor-top-icon-action" onClick={addComment} aria-label="Add comment" title="Add comment"><MessageSquare size={14} /></button>
-                <button type="button" className="editor-top-icon-action" onClick={() => navigate(selectedId ? `/version?doc=${selectedId}` : '/version')} aria-label="Open version history" title="Version history"><History size={14} /></button>
-              </div>
-
-              <div className={`editor-save-state ${isSaved ? 'is-saved' : 'is-saving'}`}>
-                <span />{isSaved ? 'All changes saved' : 'Saving changes…'}
-              </div>
-
               <div className="editor-topbar-actions">
-                <button type="button" className="editor-top-action" onClick={() => announce('Document exported as DOCX')}><Printer size={15} /><span className="editor-hide-sm">Export</span></button>
+                <button type="button" className="editor-top-icon-action" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand('undo')} aria-label="Undo" title="Undo (Ctrl+Z)"><Undo2 size={15} /></button>
+                <button type="button" className="editor-top-icon-action" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand('redo')} aria-label="Redo" title="Redo (Ctrl+Y)"><Redo2 size={15} /></button>
+                <button type="button" className="editor-top-icon-action" onClick={() => navigate(selectedId ? `/version?doc=${selectedId}` : '/version')} aria-label="Version history" title="Version history"><History size={15} /></button>
+                <span className="editor-topbar-divider" />
+                <button type="button" className="editor-top-action" onClick={() => handleExport('docx')} title="Download as a Word file"><Printer size={15} /><span className="editor-hide-sm">Export</span></button>
                 <button type="button" className="editor-top-action editor-share-action" onClick={() => navigate('/share')}><Share2 size={14} /><span className="editor-hide-sm">Share</span></button>
-                <button type="button" className="editor-save-button" onClick={() => saveAndAnnounce('Document saved')}><Check size={15} /> Save</button>
-                <span className="editor-avatar">MA</span>
               </div>
             </div>
 
@@ -525,11 +712,12 @@ function Editor() {
                       <div className="editor-file-menu-divider" />
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); saveAndAnnounce('Document saved'); }}><Save size={14} /><span>Save</span><kbd>Ctrl S</kbd></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); saveAndAnnounce('Document saved'); }}><Copy size={14} /><span>Save as…</span><kbd>Ctrl Shift S</kbd></button>
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('A copy of this document is ready'); }}><FilePlus2 size={14} /><span>Make a copy</span></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); makeCopy(); }}><FilePlus2 size={14} /><span>Make a copy</span></button>
                       <div className="editor-file-menu-divider" />
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('Document exported as PDF'); }}><Printer size={14} /><span>Export as PDF</span></button>
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('Document exported as DOCX'); }}><FileText size={14} /><span>Export as DOCX</span></button>
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); window.print(); }}><Printer size={14} /><span>Print</span><kbd>Ctrl P</kbd></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); handleExport('pdf'); }}><Printer size={14} /><span>Export as PDF</span></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); handleExport('docx'); }}><FileText size={14} /><span>Export as DOCX</span></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); handleExport('txt'); }}><FileText size={14} /><span>Export as TXT</span></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); handleExport('pdf'); }}><Printer size={14} /><span>Print</span></button>
                       <div className="editor-file-menu-divider" />
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate(selectedId ? `/version?doc=${selectedId}` : '/version'); }}><History size={14} /><span>Version history</span></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate('/documents'); }} className="editor-file-menu-danger"><X size={14} /><span>Close editor</span><kbd>Esc</kbd></button>
@@ -548,129 +736,26 @@ function Editor() {
                 ))}
               </div>
               <div className="editor-utility-tabs">
-                <span className="editor-privacy-pill">
-                  <KeyRound size={12} /> Private mode
-                  <span className="editor-comment-count"><MessageSquare size={11} /> {commentCount}</span>
-                </span>
-                <button type="button" className="editor-icon-action" aria-label="More editor options" onClick={() => announce('More editor options opened')}><MoreHorizontal size={16} /></button>
+                <button
+                  type="button"
+                  className={`editor-review-switch ${showReviewPanel ? 'is-on' : ''}`}
+                  onClick={() => setShowReviewPanel((value) => !value)}
+                  aria-pressed={showReviewPanel}
+                  title={showReviewPanel ? 'Hide the review panel' : 'Show contradictions, gaps and other checks'}
+                >
+                  {showReviewPanel ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+                  Review panel
+                </button>
               </div>
             </div>
 
-            <input ref={fileInputRef} type="file" hidden accept=".doc,.docx,.pdf,.txt,.rtf,.md" onChange={(event) => handleOpenFile(event.target.files)} />
+            <input ref={fileInputRef} type="file" hidden accept={IMPORT_ACCEPT} onChange={(event) => { handleOpenFile(event.target.files); event.target.value = ''; }} />
             <input ref={folderInputRef} type="file" hidden multiple webkitdirectory="" directory="" onChange={(event) => handleOpenFolder(event.target.files)} />
 
             {/* The ribbon itself */}
             <div className="editor-toolkit" aria-label={`${activeTool} ribbon`}>
               {activeTool === 'Home' && (
-                <>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Clipboard</span>
-                    <div className="editor-tool-group">
-                      <ToolbarButton icon={Undo2} label="Undo" onClick={() => runCommand('undo')} />
-                      <ToolbarButton icon={Redo2} label="Redo" onClick={() => runCommand('redo')} />
-                      <ToolbarButton icon={Copy} label="Copy selection" onClick={() => { runCommand('copy'); announce('Selection copied'); }} />
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Font</span>
-                    <div className="editor-tool-group editor-font-group">
-                      <label className="editor-select-wrap">
-                        <span className="dash-sr">Font</span>
-                        <select defaultValue="Georgia" onChange={(event) => runCommand('fontName', event.target.value)}>
-                          <option>Georgia</option><option>DM Sans</option><option>Arial</option>
-                        </select>
-                        <ChevronDown size={13} />
-                      </label>
-                      <label className="editor-size-wrap">
-                        <span className="dash-sr">Font size</span>
-                        <select defaultValue="4" onChange={(event) => runCommand('fontSize', event.target.value)}>
-                          <option value="3">11</option><option value="4">12</option><option value="5">14</option><option value="6">16</option>
-                        </select>
-                      </label>
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Styles</span>
-                    <div className="editor-tool-group">
-                      <label className="editor-style-wrap">
-                        <span className="dash-sr">Text style</span>
-                        <select defaultValue="p" onChange={(event) => runCommand('formatBlock', event.target.value)}>
-                          <option value="p">Normal text</option>
-                          <option value="h1">Title</option>
-                          <option value="h2">Heading 1</option>
-                          <option value="h3">Heading 2</option>
-                          <option value="blockquote">Quote</option>
-                        </select>
-                        <ChevronDown size={13} />
-                      </label>
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Format</span>
-                    <div className="editor-tool-group">
-                      <ToolbarButton icon={Bold} label="Bold" onClick={() => runCommand('bold')} />
-                      <ToolbarButton icon={Italic} label="Italic" onClick={() => runCommand('italic')} />
-                      <ToolbarButton icon={Underline} label="Underline" onClick={() => runCommand('underline')} />
-                      <ToolbarButton icon={Strikethrough} label="Strikethrough" onClick={() => runCommand('strikeThrough')} />
-                      <ToolbarButton icon={Highlighter} label="Highlight" onClick={() => runCommand('backColor', '#f4d995')} />
-                      <ToolbarButton icon={Superscript} label="Superscript" onClick={() => runCommand('superscript')} />
-                      <ToolbarButton icon={Subscript} label="Subscript" onClick={() => runCommand('subscript')} />
-                      <ToolbarButton icon={Eraser} label="Clear formatting" onClick={() => runCommand('removeFormat')} />
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Text color</span>
-                    <div className="editor-tool-group editor-color-tools">
-                      {[
-                        { color: '#21483b', label: 'Forest ink' },
-                        { color: '#b85d45', label: 'Terracotta ink' },
-                        { color: '#75558c', label: 'Plum ink' },
-                        { color: '#bd7935', label: 'Amber ink' },
-                      ].map((swatch) => (
-                        <button
-                          key={swatch.color}
-                          type="button"
-                          className="editor-color-swatch"
-                          title={swatch.label}
-                          aria-label={swatch.label}
-                          style={{ color: swatch.color }}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => runCommand('foreColor', swatch.color)}
-                        >A</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Paragraph</span>
-                    <div className="editor-tool-group">
-                      <ToolbarButton icon={AlignLeft} label="Align left" onClick={() => runCommand('justifyLeft')} active />
-                      <ToolbarButton icon={AlignCenter} label="Align center" onClick={() => runCommand('justifyCenter')} />
-                      <ToolbarButton icon={AlignRight} label="Align right" onClick={() => runCommand('justifyRight')} />
-                      <ToolbarButton icon={AlignJustify} label="Justify" onClick={() => runCommand('justifyFull')} />
-                      <ToolbarButton icon={List} label="Bulleted list" onClick={() => runCommand('insertUnorderedList')} />
-                      <ToolbarButton icon={ListOrdered} label="Numbered list" onClick={() => runCommand('insertOrderedList')} />
-                      <ToolbarButton icon={ListChecks} label="Checklist" onClick={() => insertHtml('<ul><li><input type="checkbox" /> Add a checklist item</li></ul>', 'Checklist inserted')} />
-                      <ToolbarButton icon={IndentDecrease} label="Decrease indent" onClick={() => runCommand('outdent')} />
-                      <ToolbarButton icon={IndentIncrease} label="Increase indent" onClick={() => runCommand('indent')} />
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section">
-                    <span className="editor-ribbon-label">Writing</span>
-                    <div className="editor-tool-group">
-                      <ToolbarButton icon={SpellCheck2} label="Run spelling check" onClick={() => announce('Spelling check complete — no new errors')} />
-                      <ToolbarButton icon={MessageSquare} label="Add comment" onClick={addComment} />
-                      <ToolbarButton icon={Link2} label="Insert link" onClick={() => insertHtml('<a href="https://example.com">Add a source link</a>', 'Link inserted')} />
-                    </div>
-                  </div>
-                  <div className="editor-ribbon-section editor-ribbon-section-end">
-                    <span className="editor-ribbon-label">Editing</span>
-                    <div className="editor-tool-group">
-                      <ToolbarButton icon={Search} label="Find in document" onClick={() => setShowFind(true)} />
-                      <ToolbarButton icon={LayoutPanelTop} label="Heading style" onClick={() => runCommand('formatBlock', 'h2')} />
-                      <ToolbarButton icon={Type} label="Normal text" onClick={() => runCommand('formatBlock', 'p')} />
-                    </div>
-                  </div>
-                </>
+                <HomeRibbon editor={editor} canEdit={canEdit} announce={announce} onFind={openFind} onReplace={openReplace} />
               )}
 
               {activeTool === 'Insert' && (
@@ -678,16 +763,16 @@ function Editor() {
                   <div className="editor-ribbon-section">
                     <span className="editor-ribbon-label">Pages</span>
                     <div className="editor-tool-group">
-                      <ToolbarButton icon={FilePlus2} label="Insert page break" onClick={() => insertHtml('<div class="editor-page-break"><span>Page break</span></div><p><br></p>', 'Page break inserted')} />
+                      <ToolbarButton icon={FilePlus2} label="Insert page break" onClick={() => runCommand('pageBreak')} />
                       <ToolbarButton icon={Quote} label="Insert quote" onClick={() => insertHtml('<blockquote>Write the sentence you want your reader to remember.</blockquote>', 'Quote block inserted')} />
                     </div>
                   </div>
                   <div className="editor-ribbon-section">
                     <span className="editor-ribbon-label">Media</span>
                     <div className="editor-tool-group">
-                      <ToolbarButton icon={ImagePlus} label="Add image placeholder" onClick={() => insertHtml('<div class="editor-image-placeholder"><span>Image placeholder</span></div><p><br></p>', 'Image placeholder inserted')} />
-                      <ToolbarButton icon={Link2} label="Insert link" onClick={() => insertHtml('<a href="https://example.com">Add a source link</a>', 'Link inserted')} />
-                      <ToolbarButton icon={Table2} label="Insert 2 by 2 table" onClick={() => insertHtml('<table><tbody><tr><td>Finding</td><td>Evidence</td></tr><tr><td>Write here</td><td>Write here</td></tr></tbody></table>', 'Table inserted')} />
+                      <ToolbarButton icon={ImagePlus} label="Add image (coming soon)" onClick={() => announce('Images are coming in a later update')} />
+                      <ToolbarButton icon={Link2} label="Insert or edit link" onClick={insertLink} />
+                      <ToolbarButton icon={Table2} label="Insert 2 by 2 table" onClick={() => runCommand('insertTable')} />
                     </div>
                   </div>
                   <div className="editor-ribbon-section">
@@ -807,113 +892,20 @@ function Editor() {
             {showFind && (
               <div className="editor-findbar">
                 <Search size={15} />
-                <input autoFocus value={findQuery} onChange={(event) => updateFind(event.target.value)} placeholder="Find in document" aria-label="Find in document" />
-                <span>{findQuery ? `${findMatches} matches` : 'Type to search'}</span>
-                <button type="button" onClick={() => { updateFind(''); setShowFind(false); }} aria-label="Close find bar"><X size={14} /></button>
+                <input id="editor-find-input" autoFocus value={findQuery} onChange={(event) => updateFind(event.target.value)} placeholder="Find in document" aria-label="Find in document" onKeyDown={(event) => { if (event.key === 'Escape') closeFind(); }} />
+                <span>{findQuery ? `${findMatches} ${findMatches === 1 ? 'match' : 'matches'}` : 'Type to search'}</span>
+                <input id="editor-replace-input" className="editor-replace-input" value={replaceText} onChange={(event) => setReplaceText(event.target.value)} placeholder="Replace with…" aria-label="Replace with" onKeyDown={(event) => { if (event.key === 'Enter') handleReplaceAll(); }} />
+                <button type="button" className="editor-replace-button" onClick={handleReplaceAll} disabled={!findMatches}>Replace all</button>
+                <button type="button" onClick={closeFind} aria-label="Close find bar"><X size={14} /></button>
               </div>
             )}
 
-            {/* Whole-document commands */}
-            <div className="editor-command-bar">
-              <div className="editor-command-group">
-                <button type="button" className="editor-command-button command-scan" onClick={() => announce('Document scan complete')}><ShieldCheck size={14} /> Scan doc</button>
-                <button type="button" className="editor-command-button command-fix" onClick={() => announce('Safe fixes are ready')}><CheckCircle2 size={14} /> Fix all</button>
-                <button type="button" className="editor-command-button command-suggest" onClick={() => announce('Suggestions generated')}><Sparkles size={14} /> Suggest</button>
-                <button type="button" className="editor-command-button command-more" onClick={() => setModal('document')}><Plus size={14} /> New document</button>
-              </div>
-              <span className="editor-page-count">{pageLabel(currentDocument?.pages)} · {currentDocument?.type ?? 'DOCX'}</span>
-            </div>
-
             {/* Navigator | canvas | review */}
-            <div className={`editor-main-grid ${documentPanelExpanded ? 'documents-expanded' : 'documents-collapsed'}`}>
+            <div className="editor-main-grid is-clean">
 
-              <aside className="editor-document-panel" aria-label="Editor document navigator">
-                <div className="editor-panel-heading">
-                  <div className="editor-panel-heading-copy">
-                    <p className="editor-panel-kicker">Workspace</p>
-                    <h2>My documents</h2>
-                  </div>
-                  <div className="editor-panel-actions">
-                    <button
-                      type="button"
-                      className="editor-panel-toggle"
-                      onClick={() => setDocumentPanelExpanded((value) => !value)}
-                      aria-expanded={documentPanelExpanded}
-                      aria-label={documentPanelExpanded ? 'Hide document navigator' : 'Show document navigator'}
-                      title={documentPanelExpanded ? 'Hide navigator' : 'Show navigator'}
-                    >
-                      {documentPanelExpanded ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
-                      <span className="editor-panel-toggle-text">{documentPanelExpanded ? 'Hide' : 'Show'}</span>
-                    </button>
-                    <button type="button" className="editor-panel-add" onClick={() => setModal('document')} aria-label="Create a new document"><Plus size={15} /></button>
-                  </div>
-                </div>
-                <label className="editor-document-search">
-                  <Search size={13} />
-                  <input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Find a document" aria-label="Find a document" />
-                </label>
-                <div className="editor-document-list">
-                  {visibleDocuments.map((doc) => (
-                    <button
-                      key={doc.id}
-                      type="button"
-                      title={doc.title}
-                      className={`editor-document-item ${doc.id === currentDocument?.id ? 'is-active' : ''}`}
-                      onClick={() => changeDocument(doc.id)}
-                    >
-                      <span className={`editor-document-thumb thumb-${doc.color}`}><FileText size={14} /></span>
-                      <span className="editor-document-item-copy"><strong>{doc.title}</strong><small>{doc.type} · {pageLabel(doc.pages)}</small></span>
-                      {doc.id === currentDocument?.id && <span className="editor-document-live" />}
-                    </button>
-                  ))}
-                  {visibleDocuments.length === 0 && <p className="editor-document-empty">No documents found.</p>}
-                </div>
-                <div className="editor-collection-block">
-                  <div className="editor-collection-heading">
-                    <span>Collections</span>
-                    <button type="button" onClick={() => announce('Collection creation opened')} aria-label="Add collection"><Plus size={13} /></button>
-                  </div>
-                  <button type="button" className="editor-collection-item is-selected"><span className="collection-dot dot-sage" />Research Papers <em>{documents.length}</em></button>
-                  <button type="button" className="editor-collection-item"><span className="collection-dot dot-amber" />Client work <em>4</em></button>
-                  <button type="button" className="editor-collection-item"><span className="collection-dot dot-plum" />Shared with me <em>3</em></button>
-                </div>
-                <div className="editor-weekly-card">
-                  <Sparkles size={15} />
-                  <span><strong>12 decisions made</strong><small>This week in your workspace</small></span>
-                  <ArrowUpRight size={13} />
-                </div>
-              </aside>
+              {/* The document list lives in My documents and File → Open recent. */}
 
               <section className="editor-canvas-shell">
-                <div className="editor-canvas-toolbar">
-                  <span className="editor-canvas-label"><FileCheck2 size={14} /> Editing <strong>{currentDocument?.title ?? '—'}</strong></span>
-                  <div className="editor-heatmap-bar">
-                    <span className="editor-heatmap-title"><AlertTriangle size={12} /> Heatmap</span>
-                    <span className="editor-heatmap-legend">
-                      <i className="heatmap-dot dot-contradiction" /> Contradiction
-                      <i className="heatmap-dot dot-structure" /> Structure
-                      <i className="heatmap-dot dot-redundancy" /> Redundancy
-                      <i className="heatmap-dot dot-citation" /> Citation
-                    </span>
-                    <button type="button" className={`editor-heatmap-toggle ${heatmapEnabled ? 'is-on' : ''}`} onClick={() => setHeatmapEnabled((value) => !value)} aria-pressed={heatmapEnabled}>
-                      <span /> {heatmapEnabled ? 'On' : 'Off'}
-                    </button>
-                  </div>
-                  <div className="editor-canvas-actions">
-                    <span className="editor-canvas-status"><span /> Cursor synced</span>
-                    <button
-                      type="button"
-                      className="editor-review-toggle"
-                      onClick={() => setShowReviewPanel((value) => !value)}
-                      aria-pressed={showReviewPanel}
-                      title={showReviewPanel ? 'Collapse review panel' : 'Open review panel'}
-                    >
-                      {showReviewPanel ? <PanelRightClose size={13} /> : <PanelRightOpen size={13} />}
-                      <span>{showReviewPanel ? 'Hide review' : 'Show review'}</span>
-                    </button>
-                  </div>
-                </div>
-
                 <div className="editor-paper-wrap">
                   {noDocuments && (
                     <div className="editor-empty-note" role="status">
@@ -921,21 +913,31 @@ function Editor() {
                       <button type="button" onClick={() => setModal('document')}><Plus size={14} /> Create a document</button>
                     </div>
                   )}
-                  <article
-                    ref={editorRef}
-                    contentEditable={Boolean(currentDocument)}
-                    suppressContentEditableWarning
-                    onInput={markUnsaved}
-                    className={`editor-paper ${pageLayout === 'wide' ? 'is-wide' : ''} ${heatmapEnabled ? '' : 'heatmap-muted'}`}
+                  <div
+                    className={`editor-paper ${pageLayout === 'wide' ? 'is-wide' : ''} ${heatmapEnabled ? '' : 'heatmap-muted'} ${currentDocument ? '' : 'is-disabled'}`}
                     style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center', marginBottom: `${(zoom - 100) * 1.5}px` }}
-                    aria-label="Document editor"
-                  />
+                    onMouseDown={(event) => {
+                      // Clicking the page margin puts the cursor at the end of the text.
+                      if (event.target === event.currentTarget && editor?.isEditable) {
+                        event.preventDefault();
+                        editor.commands.focus('end');
+                      }
+                    }}
+                  >
+                    <EditorContent editor={editor} />
+                  </div>
                 </div>
 
-                <div className="editor-canvas-footer">
-                  <span>Word count <strong>{wordCount.toLocaleString()}</strong></span>
+                <div className="editor-statusbar">
+                  <span>{pageLabel(currentDocument?.pages)}</span>
+                  <span>{wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'}</span>
                   <span>{lastSavedAt ? `Last Saved: ${clockTime(lastSavedAt)}` : 'Not saved yet'}</span>
-                  <span className="editor-autosave"><Check size={13} /> Auto-save every 5 s</span>
+                  <span className="editor-statusbar-spacer" />
+                  <div className="editor-zoom" aria-label="Zoom">
+                    <button type="button" onClick={() => setZoom((value) => Math.max(50, value - 10))} aria-label="Zoom out" title="Zoom out">−</button>
+                    <span>{zoom}%</span>
+                    <button type="button" onClick={() => setZoom((value) => Math.min(200, value + 10))} aria-label="Zoom in" title="Zoom in">+</button>
+                  </div>
                 </div>
               </section>
 

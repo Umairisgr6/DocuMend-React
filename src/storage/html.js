@@ -37,9 +37,9 @@ export function sanitizeHtml(html) {
   return doc.body.innerHTML;
 }
 
-/** Saves text to the user's Downloads folder. */
-export function downloadText(filename, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+/** Saves a file to the user's Downloads folder. */
+export function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = filename.replace(/[\\/:*?"<>|]+/g, '_');
@@ -47,4 +47,9 @@ export function downloadText(filename, text) {
   link.click();
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Saves text to the user's Downloads folder. */
+export function downloadText(filename, text) {
+  downloadBlob(filename, new Blob([text], { type: 'text/plain;charset=utf-8' }));
 }

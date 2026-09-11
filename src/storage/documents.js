@@ -30,7 +30,7 @@ export async function createDocument({ title, type = 'Other', folderId = 'root',
     checks, // analyses chosen on the setup screen
     tint: TINTS[Math.floor(Math.random() * TINTS.length)],
     format: 'DOCX',
-    content: '', // HTML for now; Tiptap JSON after section S2
+    content: '', // HTML from the Tiptap editor
     wordCount: 0,
     status: 'draft',
     syncStatus: 'local',
