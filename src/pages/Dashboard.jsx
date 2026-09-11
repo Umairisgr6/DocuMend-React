@@ -35,6 +35,7 @@ import { navigate } from '../router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { createDocument, listDocuments, updateDocument } from '../storage/documents';
 import { countWords, formatModified, pageLabel, pagesFor } from '../storage/format';
+import { formatBytes, formatPercent, getStorageReport } from '../storage/quota';
 
 /* ==========================================================================
    Content data
@@ -174,6 +175,16 @@ function Dashboard() {
   const [modal, setModal] = useState(null);
   const [draftValue] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [storageReport, setStorageReport] = useState(null);
+
+  // Real browser storage use for the Storage tile; re-measured when the document list changes.
+  useEffect(() => {
+    let cancelled = false;
+    getStorageReport()
+      .then((report) => { if (!cancelled) setStorageReport(report); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [storedDocuments]);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -443,10 +454,13 @@ function Dashboard() {
                 <CloudOff size={17} />
               </div>
               <div className="dash-storage-figures">
-                <span className="dash-storage-value dash-serif">24<span>%</span></span>
-                <span className="dash-storage-used">2.4 / 10 GB</span>
+                <span className="dash-storage-value dash-serif">{formatPercent(storageReport?.percent ?? 0).replace('%', '')}<span>%</span></span>
+                <span className="dash-storage-used">
+                  {storageReport?.quota ? `${formatBytes(storageReport.usage)} / ${formatBytes(storageReport.quota)}` : 'Measuring…'}
+                </span>
               </div>
-              <div className="dash-meter"><span style={{ width: '24%' }} /></div>
+              <div className="dash-meter"><span style={{ width: `${Math.min(100, storageReport?.percent ?? 0)}%` }} /></div>
+              {storageReport?.nearlyFull && <p className="dash-storage-warn">Almost full. Clear old versions on the Storage page.</p>}
               <button type="button" onClick={() => selectNav('Storage')} className="dash-link-btn">
                 Manage storage <ChevronRight size={13} />
               </button>

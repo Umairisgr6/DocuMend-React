@@ -6,6 +6,7 @@
  * changing any page.
  */
 import { db, newId } from './db';
+import { requestPersistentStorage } from './quota';
 
 /** The Create document screen asks for a type; My documents filters by category. */
 const CATEGORY_BY_TYPE = {
@@ -37,6 +38,7 @@ export async function createDocument({ title, type = 'Other', folderId = 'root',
     updatedAt: now,
   };
   await db.documents.add(doc);
+  requestPersistentStorage(); // ask the browser to keep our data; no need to wait
   return doc;
 }
 

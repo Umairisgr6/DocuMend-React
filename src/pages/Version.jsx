@@ -33,84 +33,73 @@ import { BrandMark } from '../components/BrandMark';
 import { workspaceRoutes } from '../components/workspace-nav';
 import { useTheme } from '../components/ThemeContext';
 import { navigate } from '../router';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { listDocuments } from '../storage/documents';
+import { createVersion, listVersions, restoreVersion } from '../storage/versions';
+import { formatModified, pageLabel, pagesFor } from '../storage/format';
+import { downloadText, paragraphsOf, sanitizeHtml } from '../storage/html';
 import "./version.css";
 
-const availableDocs = [
-  { id: 1, name: "FYP_Phase2_Report.docx", active: true },
-  { id: 2, name: "Thesis_Chapter_3.docx", active: false },
-  { id: 3, name: "Literature_Review_v1.docx", active: false },
-  { id: 4, name: "Methodology_Final.docx", active: false },
-];
+/** "Today, 9:42 am" */
+function when(ms) {
+  const text = formatModified(ms);
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
-const initialVersions = [
-  {
-    id: "v42",
-    version: "v42",
-    title: "Current version",
-    type: "Auto-saved",
-    detail: "Auto-saved after editing Section 3.2 Methodology",
-    author: "You",
-    date: "Today, 09:42 AM",
-    words: "+218 words",
-    secondary: "-34 words",
-    tone: "coral",
+function wordChange(delta) {
+  return {
+    words: delta >= 0 ? `+${delta.toLocaleString()} words` : '',
+    secondary: delta < 0 ? `−${(-delta).toLocaleString()} words` : '',
+  };
+}
+
+/** A stored version, shaped for VersionCard. `older` is the version saved just before it. */
+function toCard(version, older) {
+  const manual = version.kind === 'manual';
+  return {
+    id: version.id,
+    raw: version,
+    version: `v${version.number}`,
+    title: version.label || (manual ? 'Named snapshot' : 'Auto-saved checkpoint'),
+    type: manual ? 'Manual snapshot' : 'Auto-saved',
+    detail: version.note || (manual ? 'A snapshot you created' : 'Saved automatically while you were writing'),
+    author: 'You',
+    date: when(version.createdAt),
+    createdAt: version.createdAt,
+    content: version.content,
+    wordCount: version.wordCount ?? 0,
+    tone: manual ? 'gold' : 'mint',
+    ...wordChange((version.wordCount ?? 0) - (older?.wordCount ?? 0)),
+  };
+}
+
+/** The document as it is now, shown at the top of the timeline. */
+function currentCard(doc, latest) {
+  return {
+    id: 'current',
+    version: 'Now',
+    title: 'Current version',
+    type: 'Auto-saved',
+    detail: 'What the editor shows right now',
+    author: 'You',
+    date: when(doc.updatedAt),
+    createdAt: doc.updatedAt,
+    content: doc.content ?? '',
+    wordCount: doc.wordCount ?? 0,
+    tone: 'coral',
     current: true,
-  },
-  {
-    id: "v41",
-    version: "v41",
-    title: "Researcher feedback pass",
-    type: "Manual snapshot",
-    detail: "“Before supervisor feedback” — named by Mahnoor",
-    author: "Mahnoor",
-    date: "Today, 08:15 AM",
-    words: "+512 words",
-    secondary: "",
-    tone: "gold",
-  },
-  {
-    id: "v38",
-    version: "v38",
-    title: "Contradiction check",
-    type: "Auto-saved",
-    detail: "Auto-saved after resolving contradiction in §2.1",
-    author: "You",
-    date: "Yesterday, 11:39 PM",
-    words: "-1,204 words",
-    secondary: "",
-    tone: "mint",
-  },
-  {
-    id: "v35",
-    version: "v35",
-    title: "Shared draft",
-    type: "Manual snapshot",
-    detail: "Draft shared with research supervisor",
-    author: "You",
-    date: "Yesterday, 06:22 PM",
-    words: "+88 words",
-    secondary: "-12 words",
-    tone: "blue",
-  },
-  {
-    id: "v31",
-    version: "v31",
-    title: "Structure suggestions applied",
-    type: "Auto-saved",
-    detail: "Auto-saved after structure suggestions were applied",
-    author: "You",
-    date: "Aug 28, 04:10 PM",
-    words: "-304 words",
-    secondary: "",
-    tone: "mint",
-  },
-];
+    ...wordChange((doc.wordCount ?? 0) - (latest?.wordCount ?? 0)),
+  };
+}
 
-const filters = [
-  { id: "all", label: "All versions", count: "21" },
-  { id: "auto", label: "Auto-saved", count: "16" },
-  { id: "manual", label: "Manual snapshots", count: "05" },
-];
+/** The ?doc=<id> the page was opened with, if any. */
+function docIdFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get('doc');
+  } catch {
+    return null;
+  }
+}
 
 // The local mark is gone; the logo comes from components/BrandMark.jsx.
 
@@ -138,14 +127,14 @@ function VersionCard({ version, compareSelected, onCompare, onPreview, onRestore
             {version.current && <span className="history-current-badge">Current</span>}
             <VersionBadge type={version.type} />
           </div>
-          <time dateTime="2026-08-31">{version.date}</time>
+          <time dateTime={new Date(version.createdAt).toISOString()}>{version.date}</time>
         </div>
         <p className="history-version-detail">
           {version.detail} <span>· by {version.author}</span>
         </p>
         <div className="history-version-bottom">
           <div className="history-change-pills">
-            <span className="history-change-pill history-change-positive">{version.words}</span>
+            {version.words && <span className="history-change-pill history-change-positive">{version.words}</span>}
             {version.secondary && <span className="history-change-pill history-change-negative">{version.secondary}</span>}
           </div>
           <div className="history-version-actions">
@@ -155,10 +144,12 @@ function VersionCard({ version, compareSelected, onCompare, onPreview, onRestore
                 <span>Compare</span>
               </label>
             )}
-            <button type="button" onClick={() => onRestore(version)} title={`Restore ${version.version}`}>
-              <RotateCcw size={12} />
-              Restore
-            </button>
+            {!version.current && (
+              <button type="button" onClick={() => onRestore(version)} title={`Restore ${version.version}`}>
+                <RotateCcw size={12} />
+                Restore
+              </button>
+            )}
             <button type="button" onClick={() => onPreview(version)} title={`Preview ${version.version}`}>
               <Eye size={12} />
               Preview
@@ -178,7 +169,15 @@ function VersionCard({ version, compareSelected, onCompare, onPreview, onRestore
 }
 
 function CompareModal({ versions, onClose, onRestore }) {
-  const [before, after] = versions;
+  // Older version on the left, newer on the right.
+  const [before, after] = [...versions].sort((a, b) => a.createdAt - b.createdAt);
+  const beforeParas = paragraphsOf(before.content);
+  const afterParas = paragraphsOf(after.content);
+  const afterSet = new Set(afterParas);
+  const beforeSet = new Set(beforeParas);
+  const removedCount = beforeParas.filter((p) => !afterSet.has(p)).length;
+  const addedCount = afterParas.filter((p) => !beforeSet.has(p)).length;
+  const wordDelta = after.wordCount - before.wordCount;
 
   return (
     <div className="history-modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -194,14 +193,24 @@ function CompareModal({ versions, onClose, onRestore }) {
           <div className="history-compare-column">
             <span className="history-compare-label">Earlier version</span>
             <strong>{before.version} · {before.title}</strong>
-            <p>“The study examines how privacy-preserving systems can support student research practices across three faculties.”</p>
-            <span className="history-removed">− removed 34 words</span>
+            <div className="history-diff-list">
+              {beforeParas.length === 0 && <p className="history-diff-empty">This version was empty.</p>}
+              {beforeParas.map((para, index) => (
+                <p key={index} className={afterSet.has(para) ? '' : 'history-diff-removed'}>{para}</p>
+              ))}
+            </div>
+            <span className="history-removed">− {removedCount} {removedCount === 1 ? 'paragraph' : 'paragraphs'} removed or changed</span>
           </div>
           <div className="history-compare-column history-compare-column-after">
             <span className="history-compare-label">Newer version</span>
             <strong>{after.version} · {after.title}</strong>
-            <p>“This study examines how privacy-preserving artificial intelligence can support student research practices without turning personal archives into training material.”</p>
-            <span className="history-added">+ added 218 words</span>
+            <div className="history-diff-list">
+              {afterParas.length === 0 && <p className="history-diff-empty">This version was empty.</p>}
+              {afterParas.map((para, index) => (
+                <p key={index} className={beforeSet.has(para) ? '' : 'history-diff-added'}>{para}</p>
+              ))}
+            </div>
+            <span className="history-added">+ {addedCount} {addedCount === 1 ? 'paragraph' : 'paragraphs'} added or changed · {wordDelta >= 0 ? '+' : '−'}{Math.abs(wordDelta).toLocaleString()} words</span>
           </div>
         </div>
         <div className="history-modal-footer">
@@ -220,7 +229,23 @@ function CompareModal({ versions, onClose, onRestore }) {
 }
 
 export default function VersionHistory() {
-  const [versions, setVersions] = useState(initialVersions);
+  // Real documents and their saved versions, from IndexedDB.
+  const storedDocuments = useLiveQuery(listDocuments, []);
+  const [selectedDocId, setSelectedDocId] = useState(docIdFromUrl);
+  const doc = storedDocuments?.find((item) => item.id === selectedDocId) ?? null;
+  const storedVersions = useLiveQuery(() => listVersions(selectedDocId), [selectedDocId]) ?? [];
+  const versions = useMemo(() => {
+    const cards = storedVersions.map((version, index) => toCard(version, storedVersions[index + 1]));
+    return doc ? [currentCard(doc, storedVersions[0]), ...cards] : cards;
+  }, [doc, storedVersions]);
+  const manualCount = storedVersions.filter((version) => version.kind === 'manual').length;
+  const filters = [
+    { id: "all", label: "All versions", count: String(storedVersions.length) },
+    { id: "auto", label: "Auto-saved", count: String(storedVersions.length - manualCount) },
+    { id: "manual", label: "Manual snapshots", count: String(manualCount) },
+  ];
+  const selectedDocTitle = doc?.title ?? (storedDocuments?.length === 0 ? 'No documents yet' : 'Choose a document');
+  const oldestVersion = storedVersions[storedVersions.length - 1];
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [compareIds, setCompareIds] = useState([]);
@@ -233,7 +258,6 @@ export default function VersionHistory() {
   const [toast, setToast] = useState("");
 
   // Document and Profile Dropdown states
-  const [selectedDoc, setSelectedDoc] = useState("FYP_Phase2_Report.docx");
   const [docDropdownOpen, setDocDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
@@ -269,6 +293,20 @@ export default function VersionHistory() {
     window.setTimeout(() => setToast(""), 2600);
   };
 
+  // Opened without ?doc= (or with a deleted one): show the most recent document.
+  useEffect(() => {
+    if (!storedDocuments?.length) return;
+    if (!selectedDocId || !storedDocuments.some((item) => item.id === selectedDocId)) {
+      setSelectedDocId(storedDocuments[0].id);
+    }
+  }, [storedDocuments, selectedDocId]);
+
+  const chooseDocument = (id) => {
+    setSelectedDocId(id);
+    setCompareIds([]);
+    window.history.replaceState({}, '', `/version?doc=${id}`);
+  };
+
   const visibleVersions = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     return versions.filter((version) => {
@@ -294,38 +332,48 @@ export default function VersionHistory() {
     });
   };
 
-  const handleRestore = (version) => {
-    setVersions((current) => current.map((item) => ({ ...item, current: item.id === version.id })));
-    setCompareIds([]);
-    setCompareOpen(false);
-    setPreviewVersion(null);
-    notify(`${version.version} is now the current version.`);
+  const handleRestore = async (version) => {
+    if (version.current) {
+      notify("This is already the current version.");
+      return;
+    }
+    try {
+      await restoreVersion(version.raw);
+      setCompareIds([]);
+      setCompareOpen(false);
+      setPreviewVersion(null);
+      notify(`${version.version} restored. The text it replaced was kept as a version.`);
+    } catch (error) {
+      console.error(error);
+      notify("That version could not be restored. Try again.");
+    }
   };
 
-  const handleCreateSnapshot = (event) => {
+  const handleCreateSnapshot = async (event) => {
     event.preventDefault();
-    const name = snapshotName.trim() || "Untitled snapshot";
-    const nextVersionNumber = Math.max(
-      ...versions.map((version) => Number(version.version.replace("v", "")) || 0),
-      42,
-    ) + 1;
-    const newVersion = {
-      id: `snapshot-${Date.now()}`,
-      version: `v${nextVersionNumber}`,
-      title: name,
-      type: "Manual snapshot",
-      detail: snapshotNote.trim() || "A named checkpoint created from the editor",
-      author: "You",
-      date: "Just now",
-      words: "+0 words",
-      secondary: "",
-      tone: "gold",
-    };
-    setVersions((current) => [newVersion, ...current]);
-    setSnapshotName("");
-    setSnapshotNote("");
-    setSnapshotOpen(false);
-    notify("Manual snapshot created.");
+    if (!doc) {
+      notify("Create a document first, then take a snapshot of it.");
+      return;
+    }
+    try {
+      await createVersion(doc.id, {
+        kind: 'manual',
+        label: snapshotName.trim() || "Untitled snapshot",
+        note: snapshotNote,
+      });
+      setSnapshotName("");
+      setSnapshotNote("");
+      setSnapshotOpen(false);
+      notify("Snapshot created.");
+    } catch (error) {
+      console.error(error);
+      notify("The snapshot could not be saved. Check that your browser allows site storage.");
+    }
+  };
+
+  const handleDownload = (version) => {
+    downloadText(`${selectedDocTitle} ${version.version}.txt`, paragraphsOf(version.content).join('\n\n'));
+    notify(`${version.version} downloaded as a text file.`);
   };
 
   const selectNav = (label) => {
@@ -408,29 +456,29 @@ export default function VersionHistory() {
                     onClick={() => setDocDropdownOpen((prev) => !prev)}
                   >
                     <FileText size={14} />
-                    <span>{selectedDoc}</span>
+                    <span>{selectedDocTitle}</span>
                     <ChevronDown size={13} className={`history-chevron-icon ${docDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {docDropdownOpen && (
                     <div className="history-doc-dropdown-menu">
                       <div className="history-dropdown-header">Select Document</div>
-                      {availableDocs.map((doc) => (
+                      {(storedDocuments ?? []).map((item) => (
                         <button
-                          key={doc.id}
+                          key={item.id}
                           type="button"
-                          className={`history-doc-dropdown-item ${selectedDoc === doc.name ? 'is-selected' : ''}`}
+                          className={`history-doc-dropdown-item ${selectedDocId === item.id ? 'is-selected' : ''}`}
                           onClick={() => {
-                            setSelectedDoc(doc.name);
+                            chooseDocument(item.id);
                             setDocDropdownOpen(false);
-                            notify(`Loaded history for ${doc.name}`);
                           }}
                         >
                           <FileText size={13} />
-                          <span>{doc.name}</span>
-                          {selectedDoc === doc.name && <Check size={13} className="history-check-icon" />}
+                          <span>{item.title}</span>
+                          {selectedDocId === item.id && <Check size={13} className="history-check-icon" />}
                         </button>
                       ))}
+                      {storedDocuments?.length === 0 && <div className="history-dropdown-header">No documents yet</div>}
                     </div>
                   )}
                 </div>
@@ -438,7 +486,7 @@ export default function VersionHistory() {
 
               <div className="history-topbar-right">
                 <span className="history-local-status"><span /> All changes saved locally</span>
-                <button className="history-open-editor" type="button" onClick={() => navigate('/editor')}>
+                <button className="history-open-editor" type="button" onClick={() => navigate(selectedDocId ? `/editor?doc=${selectedDocId}` : '/editor')}>
                   Open editor
                   <ArrowLeft className="history-open-editor-arrow" size={14} />
                 </button>
@@ -508,20 +556,20 @@ export default function VersionHistory() {
                   <p>Follow every meaningful change and return to any point in your document without losing the thread.</p>
                   <div className="history-document-chip">
                     <span className="history-document-chip-icon"><FileText size={15} /></span>
-                    <span><strong>{selectedDoc.replace('.docx', '')}</strong><small>Last edited today · 42 pages</small></span>
-                    <span className="history-document-chip-state"><CheckCircle2 size={13} /> Synced</span>
+                    <span><strong>{selectedDocTitle}</strong><small>{doc ? `Last edited ${formatModified(doc.updatedAt)} · ${pageLabel(pagesFor(doc.wordCount))}` : 'Nothing to show yet'}</small></span>
+                    <span className="history-document-chip-state"><CheckCircle2 size={13} /> Saved locally</span>
                   </div>
                 </div>
                 <div className="history-stat-grid">
                   <div className="history-stat-card history-stat-card-featured">
                     <span className="history-stat-icon"><History size={15} /></span>
-                    <strong>21</strong>
+                    <strong>{storedVersions.length}</strong>
                     <span>Total revisions</span>
-                    <small>since Aug 14</small>
+                    <small>{oldestVersion ? `since ${formatModified(oldestVersion.createdAt)}` : 'none saved yet'}</small>
                   </div>
                   <div className="history-stat-card">
                     <span className="history-stat-icon"><Star size={15} /></span>
-                    <strong>05</strong>
+                    <strong>{manualCount}</strong>
                     <span>Named snapshots</span>
                     <small>kept by you</small>
                   </div>
@@ -582,7 +630,7 @@ export default function VersionHistory() {
                 <div className="history-section-heading">
                   <div>
                     <span className="history-eyebrow">Document timeline</span>
-                    <h2>{selectedDoc.replace('.docx', '')} <small>{visibleVersions.length} moments shown</small></h2>
+                    <h2>{selectedDocTitle} <small>{visibleVersions.length} moments shown</small></h2>
                   </div>
                   <button className="history-snapshot-button" type="button" onClick={() => setSnapshotOpen(true)}>
                     <Plus size={14} />
@@ -601,10 +649,15 @@ export default function VersionHistory() {
                         onCompare={toggleCompare}
                         onPreview={setPreviewVersion}
                         onRestore={handleRestore}
-                        onDownload={(item) => notify(`${item.version} download prepared locally.`)}
+                        onDownload={handleDownload}
                         onMore={(item) => notify(`More options for ${item.version} are coming next.`)}
                       />
                     ))}
+                    {storedVersions.length === 0 && doc && (
+                      <p className="history-no-versions">
+                        No saved versions yet. DocuMend keeps one automatically every 10 minutes while you write, or you can create a snapshot now.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="history-empty-state">
@@ -674,19 +727,20 @@ export default function VersionHistory() {
               <button type="button" onClick={() => setPreviewVersion(null)} aria-label="Close preview"><X size={17} /></button>
             </div>
             <div className="history-preview-paper">
-              <div className="history-preview-paper-topline"><span>{selectedDoc.toUpperCase()}</span><span>{previewVersion.version}</span></div>
+              <div className="history-preview-paper-topline"><span>{selectedDocTitle.toUpperCase()}</span><span>{previewVersion.version}</span></div>
               <div className="history-preview-rule" />
-              <span className="history-preview-kicker">Research manuscript · read-only</span>
-              <h3>Privacy-preserving AI in academic research</h3>
-              <p>This snapshot preserves the document exactly as it was when <strong>{previewVersion.detail.toLowerCase()}</strong>. Review the language, structure, and editorial decisions before returning to your current draft.</p>
-              <p>Every version stays available as a quiet checkpoint, so you can experiment without losing the shape of your original thinking.</p>
-              <div className="history-preview-paper-footer"><span>Private workspace copy</span><span>01</span></div>
+              <span className="history-preview-kicker">{previewVersion.date} · read-only</span>
+              <h3>{selectedDocTitle}</h3>
+              {previewVersion.content
+                ? <div className="history-preview-body" dangerouslySetInnerHTML={{ __html: sanitizeHtml(previewVersion.content) }} />
+                : <p>This version is empty.</p>}
+              <div className="history-preview-paper-footer"><span>Private workspace copy</span><span>{previewVersion.wordCount.toLocaleString()} words</span></div>
             </div>
             <div className="history-modal-footer">
               <span><LockKeyhole size={13} /> Preview cannot change your current draft</span>
               <div>
                 <button className="history-secondary-button" type="button" onClick={() => setPreviewVersion(null)}>Close preview</button>
-                <button className="history-primary-button" type="button" onClick={() => handleRestore(previewVersion)}><RotateCcw size={13} /> Restore this version</button>
+                {!previewVersion.current && <button className="history-primary-button" type="button" onClick={() => handleRestore(previewVersion)}><RotateCcw size={13} /> Restore this version</button>}
               </div>
             </div>
           </section>

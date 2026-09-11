@@ -338,3 +338,10 @@
   .dash-ring-fill { animation: none; }
   .dash-quick:hover { transform: none; }
 }
+
+.dash-storage-warn {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c86f52;
+}

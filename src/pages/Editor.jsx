@@ -113,6 +113,7 @@ import {
   updateDocument,
 } from '../storage/documents';
 import { clockTime, countWords, pageLabel, pagesFor } from '../storage/format';
+import { maybeAutoVersion } from '../storage/versions';
 
 /* ==========================================================================
    Content data
@@ -234,6 +235,7 @@ function Editor() {
     const words = countWords(htmlToText(pending.html));
     try {
       await updateDocument(pending.id, { content: pending.html, wordCount: words });
+      maybeAutoVersion(pending.id).catch((error) => console.error(error)); // history checkpoint, at most every 10 min
       if (loadedIdRef.current === pending.id) {
         setLastSavedAt(Date.now());
         setWordCount(words);
@@ -394,6 +396,10 @@ function Editor() {
   };
 
   const selectNav = (label) => {
+    if (label === 'Version history' && selectedId) {
+      navigate(`/version?doc=${selectedId}`); // open the history of the document being edited
+      return;
+    }
     const route = workspaceRoutes[label];
     if (route && label !== 'Editor') {
       navigate(route);
@@ -482,7 +488,7 @@ function Editor() {
                 <button type="button" className="editor-top-icon-action" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand('redo')} aria-label="Redo" title="Redo"><Redo2 size={14} /></button>
                 <span className="editor-topbar-divider" />
                 <button type="button" className="editor-top-icon-action" onClick={addComment} aria-label="Add comment" title="Add comment"><MessageSquare size={14} /></button>
-                <button type="button" className="editor-top-icon-action" onClick={() => navigate('/version')} aria-label="Open version history" title="Version history"><History size={14} /></button>
+                <button type="button" className="editor-top-icon-action" onClick={() => navigate(selectedId ? `/version?doc=${selectedId}` : '/version')} aria-label="Open version history" title="Version history"><History size={14} /></button>
               </div>
 
               <div className={`editor-save-state ${isSaved ? 'is-saved' : 'is-saving'}`}>
@@ -525,7 +531,7 @@ function Editor() {
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); announce('Document exported as DOCX'); }}><FileText size={14} /><span>Export as DOCX</span></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); window.print(); }}><Printer size={14} /><span>Print</span><kbd>Ctrl P</kbd></button>
                       <div className="editor-file-menu-divider" />
-                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate('/version'); }}><History size={14} /><span>Version history</span></button>
+                      <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate(selectedId ? `/version?doc=${selectedId}` : '/version'); }}><History size={14} /><span>Version history</span></button>
                       <button type="button" role="menuitem" onClick={() => { setShowFileMenu(false); navigate('/documents'); }} className="editor-file-menu-danger"><X size={14} /><span>Close editor</span><kbd>Esc</kbd></button>
                     </div>
                   )}
