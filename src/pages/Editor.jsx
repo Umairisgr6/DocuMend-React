@@ -11,7 +11,8 @@
  * reads ?doc=<id> from the URL; changes are written back every 5 seconds, and
  * again when you switch documents, press Ctrl+S, or leave the page.
  * Documents are stored as HTML, which Version history can read directly.
- * The review panel's issues are still sample data until the engine (S6).
+ * The review panel shows real findings from the ODIE engine (src/engine),
+ * which runs in a Web Worker and highlights what it finds on the page.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
@@ -106,6 +107,7 @@ import { findRanges, replaceAll } from '../editor/highlights';
 import { IMPORT_ACCEPT, importFile } from '../editor/importers';
 import { exportDocx, exportTxt, printDocument } from '../editor/exporters';
 import HomeRibbon from '../editor/HomeRibbon';
+import { useEngine } from '../engine/useEngine';
 
 /* ==========================================================================
    Content data
@@ -127,11 +129,9 @@ function docIdFromUrl() {
 
 const modeTabs = ['Home', 'Insert', 'Layout', 'References', 'Review', 'View', 'AI Tools'];
 
-const reviewItems = [
-  { kind: 'Contradiction', tone: 'coral', icon: AlertTriangle, detail: 'Budget conflict — PKR 45,000 in §2 para 1 vs PKR 32,000 in §2 para 2', location: '§2.1 · line 3', action: 'Auto-fix' },
-  { kind: 'Structure Gap', tone: 'amber', icon: AlertTriangle, detail: 'Claim "zero external transmission" lacks sub-section on WASM proxy architecture.', location: '§3.1 · line 2', action: 'Auto-fix' },
-  { kind: 'Redundancy', tone: 'plum', icon: RotateCcw, detail: '"60 fps editing" already used in Abstract §3 — suggest cross reference.', location: '§3.1 · line 5', action: 'Replace' },
-];
+/** How the engine's issues are shown in the review panel. */
+const ISSUE_TONE = { high: 'coral', medium: 'amber', low: 'plum' };
+const ISSUE_ICON = { contradiction: AlertTriangle, redundancy: RotateCcw, structure: ListFilter, citation: Plus };
 
 /* ==========================================================================
    Pieces
@@ -193,7 +193,6 @@ function Editor() {
   const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [pageLayout, setPageLayout] = useState('standard');
-  const [issueStates, setIssueStates] = useState({});
   const [documentSearch, setDocumentSearch] = useState('');
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [heatmapEnabled, setHeatmapEnabled] = useState(true);
@@ -223,6 +222,10 @@ function Editor() {
   }), []);
   const editor = useEditor(editorOptions);
   editorRef.current = editor;
+
+  // The ODIE engine (Rust → WebAssembly, in a Web Worker): it re-reads the
+  // document about a second after typing stops and reports what it finds.
+  const engine = useEngine(editor, { enabled: heatmapEnabled, docId: selectedId });
 
   // Which toolbar buttons should look pressed for the text under the cursor.
   const formats = useEditorState({
@@ -560,9 +563,19 @@ function Editor() {
     announce(`${folderName} opened with ${files.length} files`);
   };
 
-  const resolveIssue = (kind, resolution) => {
-    setIssueStates((current) => ({ ...current, [kind]: resolution }));
-    announce(resolution === 'fixed' ? `${kind} fixed` : `${kind} ignored`);
+  /** Applies one of the engine's one-click fixes. */
+  const applyRepair = (issue, repair) => {
+    if (!canEdit()) {
+      announce('Open a document first.');
+      return;
+    }
+    if (engine.applyRepair(issue, repair)) announce(`Fixed: ${repair.label}`);
+    else announce('The text moved. Checking the document again…');
+  };
+
+  const ignoreIssue = (issue) => {
+    engine.ignoreIssue(issue);
+    announce('Issue ignored');
   };
 
   const changeDocument = async (id) => {
@@ -613,9 +626,10 @@ function Editor() {
     setMobileSidebar(false);
   };
 
-  const openReviewItems = reviewItems.filter((item) => !issueStates[item.kind]);
-  const sourceResolved = Boolean(issueStates['Unresolved source']);
-  const issueCount = openReviewItems.length + (sourceResolved ? 0 : 1);
+  const issueCount = engine.counts.total;
+  const engineLabel = engine.status === 'ready'
+    ? (engine.engineName === 'wasm' ? 'Engine ready' : 'Engine ready (JavaScript)')
+    : engine.status === 'starting' ? 'Engine starting…' : 'Engine off';
   const visibleDocuments = documents
     .filter((doc) => doc.title.toLowerCase().includes(documentSearch.toLowerCase()))
     .slice(0, 5);
@@ -882,7 +896,7 @@ function Editor() {
                     <div className="editor-tool-group">
                       <ToolbarButton icon={ShieldCheck} label="Run privacy scan" onClick={() => setReviewTab('Privacy')} />
                       <ToolbarButton icon={ListFilter} label="Find structure gaps" onClick={() => setReviewTab('Structure')} />
-                      <ToolbarButton icon={Search} label="Find contradictions" onClick={() => setReviewTab('Issues')} />
+                      <ToolbarButton icon={Search} label="Find contradictions" onClick={() => { setReviewTab('Issues'); setShowReviewPanel(true); engine.reanalyze(); }} />
                     </div>
                   </div>
                 </>
@@ -932,6 +946,16 @@ function Editor() {
                   <span>{pageLabel(currentDocument?.pages)}</span>
                   <span>{wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'}</span>
                   <span>{lastSavedAt ? `Last Saved: ${clockTime(lastSavedAt)}` : 'Not saved yet'}</span>
+                  <button
+                    type="button"
+                    className={`editor-engine-pill engine-${engine.status} ${engine.analyzing ? 'is-busy' : ''}`}
+                    onClick={() => { setShowReviewPanel(true); setReviewTab('Issues'); }}
+                    title={engine.status === 'ready' ? 'Open the review panel' : 'The analysis engine is starting'}
+                  >
+                    <span className="editor-engine-dot" />
+                    {engine.analyzing ? 'Checking…' : engineLabel}
+                    {engine.status === 'ready' && !engine.analyzing && issueCount > 0 ? ` · ${issueCount}` : ''}
+                  </button>
                   <span className="editor-statusbar-spacer" />
                   <div className="editor-zoom" aria-label="Zoom">
                     <button type="button" onClick={() => setZoom((value) => Math.max(50, value - 10))} aria-label="Zoom out" title="Zoom out">−</button>
@@ -957,48 +981,48 @@ function Editor() {
                   <>
                     <div className="editor-scan-card">
                       <div className="editor-scan-row">
-                        <span className="editor-scan-label"><span className="editor-scan-dot" /> Scanning offline</span>
-                        <span className="editor-live-status"><span /> Live</span>
+                        <span className="editor-scan-label"><span className="editor-scan-dot" /> {engine.analyzing ? 'Checking your document…' : 'Checked on this device'}</span>
+                        <span className="editor-live-status"><span /> {engine.status === 'ready' ? 'Live' : 'Starting'}</span>
                       </div>
-                      <div className="editor-scan-progress"><span /></div>
-                      <div className="editor-scan-row editor-scan-counts"><span>{issueCount} issues found</span><span>12 checks passed</span></div>
+                      <div className={`editor-scan-progress ${engine.analyzing ? 'is-busy' : ''}`}><span /></div>
+                      <div className="editor-scan-row editor-scan-counts">
+                        <span>{issueCount} {issueCount === 1 ? 'issue' : 'issues'} found</span>
+                        <span>{engine.stats ? `${engine.stats.sentences} sentences · ${engine.stats.checks} checks` : '—'}</span>
+                      </div>
                     </div>
                     <div className="editor-review-heading">
                       <span>Active issues</span>
-                      <button type="button" onClick={() => announce('Issue filters opened')}><ListFilter size={13} /> Filter</button>
+                      <button type="button" onClick={() => { engine.reanalyze(); announce('Checking the document again'); }}><RotateCcw size={13} /> Scan now</button>
                     </div>
                     <div className="editor-issues">
-                      {openReviewItems.map((item) => (
-                        <div className={`editor-issue-card issue-${item.tone}`} key={item.kind}>
-                          <div className="editor-issue-head">
-                            <span className="editor-issue-kind"><item.icon size={13} />{item.kind}</span>
-                            <span className="editor-issue-location">{item.location}</span>
+                      {engine.issues.map((issue) => {
+                        const Icon = ISSUE_ICON[issue.kind] ?? AlertTriangle;
+                        return (
+                          <div className={`editor-issue-card issue-${ISSUE_TONE[issue.severity] ?? 'amber'}`} key={issue.id}>
+                            <div className="editor-issue-head">
+                              <span className="editor-issue-kind"><Icon size={13} />{issue.title}</span>
+                              <button type="button" className="editor-issue-location" onClick={() => engine.goToIssue(issue)} title="Show this in the document">{issue.location}</button>
+                            </div>
+                            <p>{issue.message}</p>
+                            <div className="editor-issue-actions">
+                              {issue.repairs.map((repair) => (
+                                <button type="button" key={repair.label} onClick={() => applyRepair(issue, repair)} className="editor-issue-action action-fix">{repair.label}</button>
+                              ))}
+                              <button type="button" onClick={() => engine.goToIssue(issue)} className="editor-issue-action action-source">Show me</button>
+                              <button type="button" onClick={() => ignoreIssue(issue)} className="editor-issue-action action-ignore">Ignore</button>
+                            </div>
                           </div>
-                          <p>{item.detail}</p>
-                          <div className="editor-issue-actions">
-                            <button type="button" onClick={() => resolveIssue(item.kind, 'fixed')} className="editor-issue-action action-fix">{item.action}</button>
-                            <button type="button" onClick={() => resolveIssue(item.kind, 'ignored')} className="editor-issue-action action-ignore">Ignore</button>
-                          </div>
-                        </div>
-                      ))}
-                      {!sourceResolved && (
-                        <div className="editor-issue-card issue-gold">
-                          <div className="editor-issue-head">
-                            <span className="editor-issue-kind"><Plus size={15} />Unresolved source</span>
-                            <span className="editor-issue-location">§3.1.2 · line 21</span>
-                          </div>
-                          <p>"WASM proxy" needs a citation before this claim can be marked verified.</p>
-                          <div className="editor-issue-actions">
-                            <button type="button" onClick={() => resolveIssue('Unresolved source', 'fixed')} className="editor-issue-action action-fix">Add reference</button>
-                            <button type="button" onClick={() => announce('Source finder opened')} className="editor-issue-action action-source">Find source</button>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })}
                       {issueCount === 0 && (
                         <div className="editor-no-issues">
                           <CheckCircle2 size={20} />
-                          <strong>All clear for now</strong>
-                          <span>DocuMend found no open review items.</span>
+                          <strong>{engine.status === 'ready' ? 'All clear for now' : 'Starting the engine'}</strong>
+                          <span>
+                            {engine.status === 'ready'
+                              ? 'DocuMend found no contradictions or repeated sentences.'
+                              : 'The checks begin as soon as the engine is ready.'}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1034,17 +1058,21 @@ function Editor() {
                     <div className="editor-stat-grid">
                       <div><strong>{wordCount.toLocaleString()}</strong><span>Words</span></div>
                       <div><strong>{Math.max(1, Math.ceil(wordCount / 200))} min</strong><span>Read time</span></div>
-                      <div><strong>71%</strong><span>Complete</span></div>
-                      <div><strong>8.4</strong><span>Clarity</span></div>
+                      <div><strong>{engine.stats?.sentences ?? 0}</strong><span>Sentences</span></div>
+                      <div><strong>{issueCount}</strong><span>Open issues</span></div>
                     </div>
-                    <div className="editor-stat-bar"><span style={{ width: '71%' }} /></div>
-                    <p className="editor-stat-caption">Your structure is stronger than the previous version.</p>
+                    <div className="editor-stat-bar"><span style={{ width: `${Math.max(4, 100 - Math.min(100, issueCount * 10))}%` }} /></div>
+                    <p className="editor-stat-caption">
+                      {engine.lastRunMs !== null
+                        ? `Last check took ${engine.lastRunMs} ms on this device${engine.stats?.numbers ? ` · ${engine.stats.numbers} numbers read` : ''}.`
+                        : 'The engine has not read this document yet.'}
+                    </p>
                   </div>
                 )}
 
                 <div className="editor-review-footer">
-                  <span><Cloud size={13} /> Offline-ready workspace</span>
-                  <button type="button" onClick={() => announce('Review refreshed')} aria-label="Refresh review"><RotateCcw size={13} /></button>
+                  <span><Cloud size={13} /> {engine.engineName === 'wasm' ? 'Rust engine · offline' : 'Offline-ready workspace'}</span>
+                  <button type="button" onClick={() => { engine.reanalyze(); announce('Checking the document again'); }} aria-label="Check the document again" title="Check the document again"><RotateCcw size={13} /></button>
                 </div>
               </aside>
             </div>

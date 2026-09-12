@@ -2124,3 +2124,76 @@
   .editor-statusbar { flex-wrap: wrap; gap: 10px; }
   .editor-topbar .editor-document-select { width: min(220px, 50vw); }
 }
+
+/* ==========================================================================
+   S6 — the analysis engine (ODIE)
+   The status bar pill, the "checking" bar and the issue cards' new buttons.
+   ========================================================================== */
+
+.editor-engine-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ddd5c6;
+  border-radius: 99px;
+  padding: 2px 9px;
+  background: #fffaf1;
+  color: #4c6155;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.editor-engine-pill:hover { border-color: #c8bda9; }
+.editor-engine-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: #4caf7a;
+}
+.editor-engine-pill.engine-starting .editor-engine-dot { background: #d29b35; }
+.editor-engine-pill.engine-off .editor-engine-dot { background: #b8695a; }
+.editor-engine-pill.is-busy .editor-engine-dot { animation: editor-engine-blink 1s ease-in-out infinite; }
+
+@keyframes editor-engine-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .25; }
+}
+
+/* The thin bar above the issue list moves while the engine is reading. */
+.editor-scan-progress.is-busy span {
+  width: 40%;
+  animation: editor-scan-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes editor-scan-slide {
+  0% { margin-left: 0; }
+  50% { margin-left: 60%; }
+  100% { margin-left: 0; }
+}
+
+/* The location is now a button that jumps to the text. */
+button.editor-issue-location {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+button.editor-issue-location:hover { color: #a06d31; }
+
+/* Issue cards can carry two fixes plus Show me and Ignore. */
+.editor-issue-actions { flex-wrap: wrap; }
+
+.dash-dark .editor-engine-pill {
+  border-color: #2c4034;
+  background: #16241d;
+  color: #cfe0d6;
+}
+.dash-dark .editor-engine-pill:hover { border-color: #3c5647; }
+.dash-dark button.editor-issue-location { color: #9fb3a6; }
+.dash-dark button.editor-issue-location:hover { color: #e3b850; }
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-engine-pill.is-busy .editor-engine-dot,
+  .editor-scan-progress.is-busy span { animation: none; }
+}
